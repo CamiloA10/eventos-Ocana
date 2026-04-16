@@ -276,16 +276,35 @@ export default function AdminPage() {
 
   const handleDeleteCompany = async (id: string) => {
     try {
+      // 1. Desvincular eventos (poner company_id a null)
+      const { error: eventError } = await supabase
+        .from('events')
+        .update({ company_id: null })
+        .eq('company_id', id);
+      
+      if (eventError) throw eventError;
+
+      // 2. Eliminar miembros de la empresa (si los hay)
+      const { error: memberError } = await supabase
+        .from('company_members')
+        .delete()
+        .eq('company_id', id);
+      
+      if (memberError) throw memberError;
+
+      // 3. Eliminar la empresa definitivamente
       await deleteCompany.mutateAsync(id);
+
       toast({
         title: "Empresa eliminada",
-        description: "La empresa y sus accesos han sido removidos.",
+        description: "La empresa y sus vinculaciones se han eliminado correctamente.",
       });
     } catch (err) {
+      console.error(err);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "No se pudo eliminar la empresa. Verifique que no tenga eventos vinculados si hay restricciones.",
+        title: "Error al eliminar",
+        description: "No se pudo completar el borrado. Es posible que existan restricciones de seguridad en la base de datos.",
       });
     }
     setConfirmDelete(null);
