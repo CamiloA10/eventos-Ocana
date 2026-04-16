@@ -7,6 +7,8 @@ import { useEvents, useCompanies, useCreateCompany, useDeleteCompany, type Event
 import { Plus, Pencil, Trash2, LogOut, CalendarDays, MapPin, X, Check, Image as ImageIcon, Building2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico'] as const;
 type Category = typeof CATEGORIES[number];
@@ -26,13 +28,20 @@ const emptyEventForm = {
 const emptyCompanyForm = {
   name: '',
   description: '',
+  email: '',
+  password: '',
 };
 
 export default function AdminPage() {
   const navigate = useNavigate();
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isCompany, userCompanyId, loading, signOut } = useAuth();
   const qc = useQueryClient();
-  const { data: events = [], isLoading: loadingEvents } = useEvents();
+  const rawEvents = useEvents(); 
+  const events = isAdmin 
+    ? (rawEvents.data || []) 
+    : (rawEvents.data || []).filter(e => e.company_id === userCompanyId);
+  
+  const loadingEvents = rawEvents.isLoading;
   const { data: companies = [], isLoading: loadingCompanies } = useCompanies();
   const createCompany = useCreateCompany();
   const deleteCompany = useDeleteCompany();
@@ -49,6 +58,9 @@ export default function AdminPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { toast } = useToast();
+
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'event' | 'company' } | null>(null);
 
   if (loading) {
     return (
@@ -58,9 +70,14 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user || (!isAdmin && !isCompany)) {
     navigate('/login');
     return null;
+  }
+
+  // If user is a company, force active tab to events
+  if (isCompany && activeTab === 'companies') {
+    setActiveTab('events');
   }
 
   const resetForms = () => {
@@ -111,7 +128,7 @@ export default function AdminPage() {
         ...eventForm,
         image_url: imageUrl || null,
         event_time: eventForm.event_time || null,
-        company_id: eventForm.company_id || null,
+        company_id: isCompany ? userCompanyId : (eventForm.company_id || null),
         created_by: user.id,
       };
 
@@ -124,40 +141,154 @@ export default function AdminPage() {
       }
 
       qc.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: editId ? "Evento actualizado" : "Evento creado",
+        description: `El evento "${eventForm.title}" se ha guardado correctamente.`,
+      });
       resetForms();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al guardar el evento');
+      const msg = err instanceof Error ? err.message : 'Error al guardar el evento';
+      setError(msg);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: msg,
+      });
     }
     setSubmitting(false);
   };
 
   const handleDeleteEvent = async (id: string) => {
-    if (!confirm('¿Eliminar este evento?')) return;
-    await supabase.from('events').delete().eq('id', id);
-    qc.invalidateQueries({ queryKey: ['events'] });
+    try {
+      const { error } = await supabase.from('events').delete().eq('id', id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: "Evento eliminado",
+        description: "El evento ha sido borrado permanentemente.",
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el evento.",
+      });
+    }
+    setConfirmDelete(null);
   };
 
   // --- Companies Logic ---
+  const startEditCompany = (company: Company) => {
+    const c = company as any;
+    setCompanyForm({
+      name: company.name,
+      description: company.description ?? '',
+      email: c.owner_email || '',
+      password: '', // Password isn't in the schema, so we only use it for creation
+    });
+    setEditId(company.id);
+    setShowCompanyForm(true);
+  };
+
   const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      await createCompany.mutateAsync(companyForm);
+      if (editId) {
+        // Update existing company
+        const { error: updateErr } = await supabase
+          .from('companies')
+          .update({
+            name: companyForm.name,
+            description: companyForm.description,
+            owner_email: companyForm.email,
+          })
+          .eq('id', editId);
+        
+        if (updateErr) throw updateErr;
+      } else {
+        // Create new company
+        // 1. Create the company entry
+        const { data: company, error: companyErr } = await supabase
+          .from('companies')
+          .insert({
+            name: companyForm.name,
+            description: companyForm.description,
+            owner_email: companyForm.email
+          })
+          .select()
+          .single();
+        
+        if (companyErr) throw companyErr;
+
+        // 2. Create Auth user for the new company
+        if (companyForm.email && companyForm.password) {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          
+          const tempClient = createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false }
+          });
+
+          const { data: authData, error: authErr } = await tempClient.auth.signUp({
+            email: companyForm.email,
+            password: companyForm.password,
+            options: {
+              data: {
+                company_id: company.id,
+                role: 'company'
+              }
+            }
+          });
+
+          if (authErr) throw authErr;
+
+          // 3. Link the new user_id to the company
+          if (authData.user) {
+            await supabase
+              .from('companies')
+              .update({ user_id: authData.user.id })
+              .eq('id', company.id);
+          }
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ['companies'] });
+      qc.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: editId ? "Empresa actualizada" : "Empresa creada",
+        description: `Los datos de "${companyForm.name}" se han guardado.`,
+      });
       resetForms();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al guardar la empresa');
+      const msg = err instanceof Error ? err.message : 'Error al guardar la empresa';
+      setError(msg);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: msg,
+      });
     }
     setSubmitting(false);
   };
 
   const handleDeleteCompany = async (id: string) => {
-    if (!confirm('¿Eliminar esta empresa? Esto dejará sin empresa a sus eventos asociados.')) return;
     try {
       await deleteCompany.mutateAsync(id);
+      toast({
+        title: "Empresa eliminada",
+        description: "La empresa y sus accesos han sido removidos.",
+      });
     } catch (err) {
-      alert('Error eliminando la empresa');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la empresa. Verifique que no tenga eventos vinculados si hay restricciones.",
+      });
     }
+    setConfirmDelete(null);
   };
 
   return (
@@ -189,12 +320,14 @@ export default function AdminPage() {
           >
             Eventos
           </button>
-          <button 
-            onClick={() => setActiveTab('companies')}
-            className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'companies' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
-          >
-            Empresas
-          </button>
+          {isAdmin && (
+            <button 
+              onClick={() => setActiveTab('companies')}
+              className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'companies' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
+            >
+              Empresas
+            </button>
+          )}
         </div>
 
         {activeTab === 'events' ? (
@@ -286,7 +419,7 @@ export default function AdminPage() {
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteEvent(event.id)}
+                        onClick={() => setConfirmDelete({ id: event.id, type: 'event' })}
                         className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -324,16 +457,36 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {companies.map(company => (
                   <div key={company.id} className="bg-card border border-border rounded-2xl p-5 flex items-start justify-between card-shadow">
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-bold text-lg mb-1">{company.name}</h4>
-                      {company.description && <p className="text-sm text-muted-foreground">{company.description}</p>}
+                      {company.description && <p className="text-sm text-muted-foreground mb-3">{company.description}</p>}
+                      <div className="bg-muted/50 rounded-xl p-3 space-y-2 border border-border">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-bold text-primary min-w-[60px]">Correo:</span>
+                          <span className="text-foreground font-medium">
+                            {(company as any).owner_email || 'No asignado'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-bold text-primary min-w-[60px]">Clave:</span>
+                          <span className="text-foreground font-mono">********</span>
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteCompany(company.id)}
-                      className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all ml-4 shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => startEditCompany(company)}
+                        className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all ml-4 shrink-0"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete({ id: company.id, type: 'company' })}
+                        className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -378,17 +531,19 @@ export default function AdminPage() {
                     </select>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Empresa</label>
-                    <select
-                      value={eventForm.company_id}
-                      onChange={e => setEventForm({ ...eventForm, company_id: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
-                    >
-                      <option value="">Ninguna</option>
-                      {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
+                  {!isCompany && (
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Empresa</label>
+                      <select
+                        value={eventForm.company_id}
+                        onChange={e => setEventForm({ ...eventForm, company_id: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
+                      >
+                        <option value="">Ninguna</option>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-semibold mb-1">Fecha *</label>
@@ -508,7 +663,7 @@ export default function AdminPage() {
             <div className="bg-card border border-border rounded-3xl w-full max-w-md my-8 card-shadow">
               <div className="flex items-center justify-between p-6 border-b border-border">
                 <h3 className="font-display text-xl font-bold text-foreground">
-                  Nueva Empresa
+                  {editId ? 'Editar Empresa' : 'Nueva Empresa'}
                 </h3>
                 <button onClick={resetForms} className="p-2 rounded-full hover:bg-muted transition-colors">
                   <X className="w-5 h-5" />
@@ -528,11 +683,42 @@ export default function AdminPage() {
                 <div>
                   <label className="block text-sm font-semibold mb-1">Descripción</label>
                   <textarea
-                    rows={3}
+                    rows={2}
                     value={companyForm.description}
                     onChange={e => setCompanyForm({ ...companyForm, description: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors resize-none"
                   />
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <h4 className="text-sm font-bold text-primary mb-3">Credenciales de Acceso</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Correo Electrónico *</label>
+                      <input
+                        type="email"
+                        required
+                        value={companyForm.email}
+                        onChange={e => setCompanyForm({ ...companyForm, email: e.target.value })}
+                        className="w-full px-4 py-2 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors text-sm"
+                        placeholder="empresa@ejemplo.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Contraseña *</label>
+                      <input
+                        type="password"
+                        required
+                        value={companyForm.password}
+                        onChange={e => setCompanyForm({ ...companyForm, password: e.target.value })}
+                        className="w-full px-4 py-2 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors text-sm"
+                        placeholder="Min. 6 caracteres"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 italic">
+                    * Estos datos permiten el acceso de la empresa al panel.
+                  </p>
                 </div>
 
                 {error && (
@@ -554,7 +740,12 @@ export default function AdminPage() {
                     disabled={submitting}
                     className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-60"
                   >
-                    Guardar
+                    {submitting ? (
+                      <span className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    ) : (
+                      <Check className="w-5 h-5" />
+                    )}
+                    {submitting ? 'Guardando...' : editId ? 'Actualizar' : 'Guardar'}
                   </button>
                 </div>
               </form>
@@ -562,6 +753,27 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* Modern Confirmation Dialog */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent className="rounded-3xl border-2 border-border shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl bold">¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Esta acción no se puede deshacer. Se eliminará permanentemente el {confirmDelete?.type === 'event' ? 'evento' : 'registro de la empresa'} de nuestros servidores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 mt-4">
+            <AlertDialogCancel className="rounded-xl border-2 hover:bg-muted font-semibold">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => confirmDelete?.type === 'event' ? handleDeleteEvent(confirmDelete.id) : handleDeleteCompany(confirmDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold px-6"
+            >
+              Sí, eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

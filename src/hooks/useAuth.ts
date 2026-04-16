@@ -6,6 +6,8 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCompany, setIsCompany] = useState(false);
+  const [userCompanyId, setUserCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,17 +17,31 @@ export function useAuth() {
 
       if (session?.user) {
         try {
-          const { data } = await supabase.rpc('has_role', {
+          // Check for admin role
+          const { data: roleData } = await supabase.rpc('has_role', {
             _user_id: session.user.id,
             _role: 'admin',
           });
-          setIsAdmin(!!data);
+          setIsAdmin(!!roleData);
+
+          // Check for company association in metadata or a specific claim
+          const companyId = session.user.user_metadata?.company_id;
+          if (companyId) {
+            setIsCompany(true);
+            setUserCompanyId(companyId);
+          } else {
+            setIsCompany(false);
+            setUserCompanyId(null);
+          }
         } catch (err) {
           console.error("Error fetching role:", err);
           setIsAdmin(false);
+          setIsCompany(false);
         }
       } else {
         setIsAdmin(false);
+        setIsCompany(false);
+        setUserCompanyId(null);
       }
       setLoading(false);
     };
@@ -45,5 +61,5 @@ export function useAuth() {
 
   const signOut = () => supabase.auth.signOut();
 
-  return { user, session, isAdmin, loading, signOut };
+  return { user, session, isAdmin, isCompany, userCompanyId, loading, signOut };
 }
