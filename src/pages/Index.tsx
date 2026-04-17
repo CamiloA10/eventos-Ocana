@@ -1,13 +1,25 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Music, Dumbbell, Map, LogIn, CalendarDays, UserPlus, Sparkles, ArrowRight, Star, CheckCircle2, Search, Zap, ShieldCheck, Globe, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 import heroImg from '@/assets/ocana-hero.jpg';
-import { useUpcomingCount, useFeaturedEvents } from '@/hooks/useEvents';
+import { useStats, useFeaturedEvents } from '@/hooks/useEvents';
 import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
 
 export default function Index() {
-  const { data: upcomingCount = 0 } = useUpcomingCount();
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: stats = { events: 0, companies: 0, attendance: 0 } } = useStats();
   const { data: featured = [] } = useFeaturedEvents();
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/eventos?search=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      navigate('/eventos');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 font-sans antialiased">
@@ -32,25 +44,39 @@ export default function Index() {
                 Únete a miles de ocañeros que descubren los mejores planes de arte, música, deporte y cultura cada día.
               </p>
 
-              {/* Integrated Search Bar */}
-              <div className="relative max-w-2xl group mb-10">
+              <form onSubmit={handleSearch} className="relative max-w-2xl group mb-10">
                 <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
                   <Search className="w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                 </div>
                 <input 
                   type="text" 
                   placeholder="¿Buscas algún evento en especial?" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-14 pr-32 py-5 bg-white border-2 border-slate-100 rounded-2xl shadow-xl shadow-slate-200 group-hover:border-blue-100 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-lg font-medium"
                 />
-                <button className="absolute right-3 inset-y-3 bg-blue-600 text-white px-8 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95">
+                <button 
+                  type="submit"
+                  className="absolute right-3 inset-y-3 bg-blue-600 text-white px-8 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+                >
                   Buscar
                 </button>
-              </div>
+              </form>
 
-              <div className="flex flex-wrap gap-10">
+              <div className="flex flex-wrap gap-12">
                 <div className="flex flex-col">
-                  <span className="text-4xl font-black text-slate-900 tracking-tighter">{upcomingCount}+</span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Eventos este mes</span>
+                  <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.events}+</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Eventos este mes</span>
+                </div>
+                <div className="w-px h-12 bg-slate-200 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="text-4xl font-black text-blue-600 tracking-tighter">{stats.companies}+</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Aliados / Empresas</span>
+                </div>
+                <div className="w-px h-12 bg-slate-200 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.attendance}+</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Asistencias</span>
                 </div>
               </div>
             </div>
@@ -66,7 +92,7 @@ export default function Index() {
                 <div className="absolute bottom-10 left-10 text-white">
                   <p className="text-xs font-black uppercase tracking-[0.2em] mb-2 text-blue-400">Próximamente</p>
                   <h3 className="text-3xl font-bold mb-1">Carnavales de Ocaña</h3>
-                  <p className="text-white/60 font-medium">Plaza de Ferias · Enero 2025</p>
+                  <p className="text-white/60 font-medium">Plaza de Ferias · Enero 2026</p>
                 </div>
               </div>
             </div>
@@ -74,22 +100,43 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Features - Simplified */}
-      <section className="py-24 px-6 border-y border-slate-50">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-16">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-              <ShieldCheck className="w-8 h-8" />
+      {/* Premium Features Section */}
+      <section className="py-24 px-6 relative overflow-hidden bg-slate-50/50">
+        {/* Background Decorations */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl -translate-y-1/2" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl translate-y-1/2" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500 group">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-8 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <h4 className="text-xl font-black text-slate-900 mb-4 tracking-tight">100% Verificado</h4>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                Filtramos cada publicación para asegurar que la información sea real y actualizada directamente de fuentes oficiales de Ocaña.
+              </p>
             </div>
-            <h4 className="text-lg font-bold">100% Verificado</h4>
-            <p className="text-slate-500 text-sm leading-relaxed">Filtramos cada publicación para asegurar que la información sea real y actualizada directamente de fuentes oficiales.</p>
-          </div>
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
-              <Globe className="w-8 h-8" />
+
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500 group">
+              <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-8 group-hover:scale-110 transition-transform">
+                <Globe className="w-8 h-8" />
+              </div>
+              <h4 className="text-xl font-black text-slate-900 mb-4 tracking-tight">Todo en un lugar</h4>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                Desde el concierto más grande en la Plaza hasta el taller más pequeño. La agenda más completa de la región en tu mano.
+              </p>
             </div>
-            <h4 className="text-lg font-bold">Todo en un lugar</h4>
-            <p className="text-slate-500 text-sm leading-relaxed">Desde el concierto más grande hasta el taller más pequeño en tu barrio. La agenda más completa de la región.</p>
+
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500 group">
+              <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 mb-8 group-hover:scale-110 transition-transform">
+                <UserPlus className="w-8 h-8" />
+              </div>
+              <h4 className="text-xl font-black text-slate-900 mb-4 tracking-tight">Comunidad Viva</h4>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                Mira quién asiste, comenta y comparte eventos con tus amigos. Ocaña se vive mejor cuando nos encontramos todos.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -107,11 +154,12 @@ export default function Index() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { label: 'Cultural', tag: 'Arte & Música', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', count: '12 eventos' },
               { label: 'Deportivo', tag: 'Acción & Salud', img: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', count: '8 eventos' },
               { label: 'Turístico', tag: 'Rutas & Aventura', img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', count: '5 eventos' },
+              { label: 'Religioso', tag: 'Fe & Tradición', img: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=800&q=80', count: '4 eventos' },
             ].map((cat) => (
               <Link 
                 key={cat.label}
@@ -172,7 +220,7 @@ export default function Index() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-3xl font-black tracking-tighter text-white font-display">
-                  ¿Qué hay <span className="text-blue-500">pa' hacer?</span>
+                  ¿Hey pa' <span className="text-blue-500">dónde vamos?</span>
                 </span>
               </Link>
               
@@ -220,7 +268,7 @@ export default function Index() {
               <div className="col-span-2 md:col-span-1 space-y-8">
                 <h4 className="text-white font-black text-xs uppercase tracking-widest font-display border-l-2 border-blue-600 pl-3">Boletín</h4>
                 <div className="space-y-4">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">Suscríbete para recibir novedades exclusivas.</p>
+                  <p className="text-base font-bold text-slate-400 tracking-tight font-display">Suscríbete para recibir novedades exclusivas.</p>
                   <div className="flex flex-col gap-3">
                     <input 
                       type="email" 
@@ -228,7 +276,7 @@ export default function Index() {
                       className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 text-white font-medium transition-all"
                     />
                     <button className="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-900/40 transform active:scale-95">
-                      Fórmate Ahora
+                      Suscribirme ahora
                     </button>
                   </div>
                 </div>
@@ -237,10 +285,10 @@ export default function Index() {
           </div>
           
           <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">© 2025 · Ocaña · Pasión por lo nuestro</p>
+            <p className="text-sm font-bold text-slate-500 font-display tracking-tight">© 2025 · Ocaña · Pasión por lo nuestro</p>
             <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-pulse" />
-               <span className="text-[10px] text-white font-black uppercase tracking-widest">Servidor Ocaña Activo</span>
+               <span className="text-xs text-white font-bold tracking-tight font-display">Servidor Ocaña Activo</span>
             </div>
           </div>
         </div>

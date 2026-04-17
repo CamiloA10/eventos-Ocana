@@ -71,7 +71,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="font-display text-2xl font-bold text-gradient">
-            ¿Qué hay pa' hacer?
+            ¿Hey pa' dónde vamos?
           </Link>
           <h1 className="font-display text-3xl font-bold text-foreground mt-4 mb-2">Crear Cuenta</h1>
           <p className="text-muted-foreground">Únete para guardar tus eventos favoritos</p>

@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useEvents, useCompanies, useCreateCompany, useDeleteCompany, type Event, type Company } from '@/hooks/useEvents';
-import { Plus, Pencil, Trash2, LogOut, CalendarDays, MapPin, X, Check, Image as ImageIcon, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, LogOut, CalendarDays, MapPin, X, Check, Image as ImageIcon, Building2, Sparkles } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico'] as const;
+const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico', 'Religioso'] as const;
 type Category = typeof CATEGORIES[number];
 
 const emptyEventForm = {
@@ -111,10 +111,24 @@ export default function AdminPage() {
     if (!imageFile) return eventForm.image_url;
     const ext = imageFile.name.split('.').pop();
     const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('event-images').upload(path, imageFile);
-    if (error) throw error;
-    const { data } = supabase.storage.from('event-images').getPublicUrl(path);
-    return data.publicUrl;
+    
+    try {
+      const { error } = await supabase.storage.from('event-images').upload(path, imageFile);
+      if (error) {
+        console.error('Error de Storage:', error);
+        throw new Error(`No se pudo subir la imagen. Asegúrate de que el bucket "event-images" existe en Supabase y tiene políticas de subida activas. Detalle: ${error.message}`);
+      }
+      
+      const { data } = supabase.storage.from('event-images').getPublicUrl(path);
+      return data.publicUrl;
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error de Almacenamiento",
+        description: err.message || "Error al subir la imagen",
+      });
+      throw err;
+    }
   };
 
   const handleEventSubmit = async (e: React.FormEvent) => {
@@ -311,14 +325,23 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-bold antialiased">
       {/* Sidebar-style header */}
       <header className="bg-sidebar text-sidebar-foreground px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div>
-          <h1 className="font-display text-xl font-bold text-primary">¿Qué hay pa' hacer?</h1>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+            ¿Hey pa' <span className="text-blue-600">dónde vamos?</span>
+          </h1>
           <p className="text-xs text-sidebar-foreground/60">Panel de Administración</p>
         </div>
         <div className="flex items-center gap-4">
+          <Link 
+            to="/" 
+            className="flex items-center gap-2 bg-sidebar-accent hover:bg-primary hover:text-primary-foreground text-sidebar-foreground px-4 py-2 rounded-full text-sm font-medium transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            Ver Sitio
+          </Link>
           <span className="text-sm hidden sm:block text-sidebar-foreground/70">{user.email}</span>
           <button
             onClick={() => { signOut(); navigate('/'); }}
@@ -370,7 +393,7 @@ export default function AdminPage() {
 
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display text-2xl font-bold text-foreground">Eventos</h2>
+              <h2 className="font-display text-3xl font-black tracking-tight text-foreground">Eventos</h2>
               <button
                 onClick={() => { resetForms(); setShowEventForm(true); }}
                 className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold hover:bg-primary/90 transition-all hover:-translate-y-0.5 shadow-md"

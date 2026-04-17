@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Menu, X, LogOut, LayoutDashboard, Sparkles } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Sparkles, Bell } from 'lucide-react';
+import NotificationPreferences from './NotificationPreferences';
 
 export default function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
@@ -30,7 +31,7 @@ export default function Navbar() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900">
-            ¿Qué hay <span className="text-blue-600">pa' hacer?</span>
+            ¿Hey pa' <span className="text-blue-600">dónde vamos?</span>
           </span>
         </Link>
 
@@ -49,8 +50,9 @@ export default function Navbar() {
 
           <div className="h-6 w-px bg-slate-200" />
 
-          {user ? (
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
+            <NotificationPreferences />
+            {user ? (
               <button
                 onClick={signOut}
                 className="flex items-center gap-2 text-slate-500 hover:text-red-600 font-semibold text-sm transition-colors"
@@ -58,23 +60,23 @@ export default function Navbar() {
                 <LogOut className="w-4 h-4" />
                 Salir
               </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <Link
-                to="/login"
-                className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors px-4 py-2"
-              >
-                Ingresar
-              </Link>
-              <Link
-                to="/register"
-                className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
-              >
-                Registrarse
-              </Link>
-            </div>
-          )}
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors px-4 py-2"
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+                >
+                  Registrarse
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Mobile Toggle */}
@@ -90,6 +92,10 @@ export default function Navbar() {
           {isAdmin && (
             <Link to="/admin" className="text-xl font-bold text-blue-600" onClick={() => setOpen(false)}>Administrar</Link>
           )}
+          <div className="flex items-center gap-4 py-2">
+            <NotificationPreferences />
+            <span className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Avisos Inteligentes</span>
+          </div>
           <hr className="border-slate-100" />
           {user ? (
             <button onClick={() => { signOut(); setOpen(false); }} className="text-left font-bold text-red-500">

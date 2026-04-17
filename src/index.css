@@ -5,7 +5,7 @@
 
 
 
-/* Design system – ¿Qué hay pa' hacer? – Warm Colombian palette */
+/* Design system – ¿Y para dónde vamos? – Warm Colombian palette */
 
 @layer base {
   :root {
@@ -86,16 +86,8 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
-
-  h1,
-  h2,
-  h3,
-  .font-display {
-    font-family: 'Outfit', sans-serif;
+  body, h1, h2, h3, h4, h5, h6, .font-display, .font-bold, .font-semibold, .font-black {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
   }
 }
 

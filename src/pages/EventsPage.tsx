@@ -6,21 +6,22 @@ import { useAuth } from '@/hooks/useAuth';
 import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
 
-const CATEGORIES = ['Todos', 'Cultural', 'Deportivo', 'Turístico'];
+const CATEGORIES = ['Todos', 'Cultural', 'Deportivo', 'Turístico', 'Religioso'];
 
 export default function EventsPage() {
   const [searchParams] = useSearchParams();
   const initCat = searchParams.get('categoria') ?? 'Todos';
+  const initSearch = searchParams.get('search') ?? '';
 
   const [category, setCategory] = useState(initCat);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initSearch);
 
   const { user } = useAuth();
   const { data: savedEventIds = [] } = useSavedEvents(user?.id);
 
   const internalCat = category === 'Destacados' ? 'Todos' : category;
   const { data: allEvents = [], isLoading } = useEvents(internalCat, search);
-  
+
   const events = category === 'Destacados'
     ? allEvents.filter(e => savedEventIds.includes(e.id))
     : allEvents;
@@ -59,13 +60,12 @@ export default function EventsPage() {
               <button
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all ${
-                  category === cat
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all ${category === cat
                     ? 'bg-primary text-primary-foreground shadow-md scale-105'
                     : 'bg-card border-2 border-border text-foreground hover:border-primary'
-                }`}
+                  }`}
               >
-                {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : cat === 'Destacados' ? <Star className="w-4 h-4" /> : '📋'} 
+                {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : cat === 'Religioso' ? '⛪' : cat === 'Destacados' ? <Star className="w-4 h-4" /> : '📋'}
                 {cat}
               </button>
             ))}
