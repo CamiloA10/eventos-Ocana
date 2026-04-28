@@ -24,7 +24,7 @@ export default function NotificationPreferences() {
           .select('notification_categories')
           .eq('id', user.id)
           .single();
-        
+
         if (data && !error) {
           setSubscribedCategories(data.notification_categories || []);
         }
@@ -38,9 +38,9 @@ export default function NotificationPreferences() {
   }, [user, isOpen]);
 
   const toggleCategory = (category: string) => {
-    setSubscribedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category) 
+    setSubscribedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
         : [...prev, category]
     );
   };
@@ -52,8 +52,8 @@ export default function NotificationPreferences() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .upsert({ 
-          id: user.id, 
+        .upsert({
+          id: user.id,
           notification_categories: subscribedCategories,
           updated_at: new Date().toISOString()
         });
@@ -62,7 +62,7 @@ export default function NotificationPreferences() {
 
       toast({
         title: "¡Listo!",
-        description: subscribedCategories.length > 0 
+        description: subscribedCategories.length > 0
           ? `Te avisaremos por email (${user.email}) sobre eventos de: ${subscribedCategories.join(', ')}`
           : "Has desactivado todas las alertas.",
       });
@@ -82,7 +82,7 @@ export default function NotificationPreferences() {
     <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-md overflow-y-auto custom-scrollbar animate-in fade-in duration-300">
       <div className="min-h-screen flex items-start justify-center p-4 pt-[10vh]">
         <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-[0_32px_64px_-15px_rgba(0,0,0,0.3)] border border-slate-100 overflow-hidden transform animate-in zoom-in-95 duration-300 mb-20">
-          
+
           {!user ? (
             // Vista para usuarios NO logueados
             <div className="p-10 text-center">
@@ -93,7 +93,7 @@ export default function NotificationPreferences() {
               <p className="text-slate-500 mb-10 leading-relaxed">
                 Para suscribirte a las categorías y recibir avisos personalizados en tu correo, necesitas tener una cuenta.
               </p>
-              <Link 
+              <Link
                 to="/login"
                 onClick={() => setIsOpen(false)}
                 className="w-full flex items-center justify-center gap-3 bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98]"
@@ -101,7 +101,7 @@ export default function NotificationPreferences() {
                 <LogIn className="w-5 h-5" />
                 Iniciar Sesión
               </Link>
-              <button 
+              <button
                 onClick={() => setIsOpen(false)}
                 className="mt-6 text-slate-400 font-bold hover:text-slate-600 transition-colors"
               >
@@ -137,23 +137,20 @@ export default function NotificationPreferences() {
                     <button
                       key={cat}
                       onClick={() => toggleCategory(cat)}
-                      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 ${
-                        isActive 
-                          ? 'border-blue-600 bg-blue-50/50 shadow-sm' 
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-300 ${isActive
+                          ? 'border-blue-600 bg-blue-50/50 shadow-sm'
                           : 'border-slate-100 bg-white hover:border-blue-200'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all ${
-                          isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-50 text-slate-400'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-50 text-slate-400'
+                          }`}>
                           {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : '⛪'}
                         </div>
                         <span className={`font-bold transition-colors ${isActive ? 'text-blue-900' : 'text-slate-600'}`}>{cat}</span>
                       </div>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isActive ? 'bg-blue-600 border-blue-600' : 'border-slate-200'
-                      }`}>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isActive ? 'bg-blue-600 border-blue-600' : 'border-slate-200'
+                        }`}>
                         {isActive && <Check className="w-3 h-3 text-white stroke-[4px]" />}
                       </div>
                     </button>
@@ -170,7 +167,7 @@ export default function NotificationPreferences() {
               </button>
             </div>
           )}
-          
+
           <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
             <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
               Sincronizado con tu cuenta
@@ -183,7 +180,7 @@ export default function NotificationPreferences() {
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
         className="relative p-2 rounded-full hover:bg-slate-100 transition-colors group"
         title="Configurar notificaciones"

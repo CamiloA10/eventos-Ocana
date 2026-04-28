@@ -21,6 +21,42 @@ export type Company = {
   category: string;
 };
 
+const STATIC_RELIGIOUS_EVENTS: Event[] = [
+  {
+    id: 'static-1',
+    title: "Misa en Honor a la Virgen de la Torcoroma",
+    description: "Solemne eucaristía en el Santuario de la Aparición. Una tradición de fe que une a todos los ocañeros en honor a nuestra patrona.",
+    event_date: "2026-08-16",
+    location: "Santuario de la Torcoroma",
+    category: "Religioso",
+    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png",
+    featured: true,
+    company_id: ""
+  },
+  {
+    id: 'static-2',
+    title: "Procesión de Viernes Santo",
+    description: "Recorrido por las principales calles del centro histórico de Ocaña. Una de las manifestaciones religiosas más antiguas y respetadas de la región.",
+    event_date: "2026-04-03",
+    location: "Centro Histórico",
+    category: "Religioso",
+    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/procesion_semana_santa.png",
+    featured: false,
+    company_id: ""
+  },
+  {
+    id: 'static-3',
+    title: "Fiesta de San Jorge Patrono",
+    description: "Celebración del día de San Jorge, patrono de nuestra ciudad. Misa solemne y actos culturales en la Catedral de Santa Ana.",
+    event_date: "2026-04-23",
+    location: "Catedral de Santa Ana",
+    category: "Religioso",
+    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/misa_catedral.png",
+    featured: true,
+    company_id: ""
+  }
+];
+
 export function useEvents(category?: string, searchTerm?: string) {
   return useQuery({
     queryKey: ['events', category, searchTerm],
@@ -37,7 +73,27 @@ export function useEvents(category?: string, searchTerm?: string) {
       
       const { data, error } = await query.order('event_date', { ascending: true });
       if (error) throw error;
-      return data as Event[];
+      
+      let allEvents = data as Event[];
+      
+      // Merge with static religious events if relevant
+      if (!category || category === 'Todos' || category === 'Religioso') {
+        const religiousFiltered = category === 'Religioso' 
+          ? STATIC_RELIGIOUS_EVENTS 
+          : STATIC_RELIGIOUS_EVENTS;
+        
+        // Avoid duplicates if they were already in the DB
+        const dbTitles = new Set(allEvents.map(e => e.title));
+        const uniqueStatic = STATIC_RELIGIOUS_EVENTS.filter(e => !dbTitles.has(e.title));
+        
+        if (!category || category === 'Todos') {
+          allEvents = [...allEvents, ...uniqueStatic];
+        } else if (category === 'Religioso') {
+          allEvents = [...allEvents, ...uniqueStatic];
+        }
+      }
+
+      return allEvents.sort((a, b) => a.event_date.localeCompare(b.event_date));
     },
   });
 }

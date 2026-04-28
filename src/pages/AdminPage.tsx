@@ -21,7 +21,6 @@ const emptyEventForm = {
   location: '',
   description: '',
   image_url: '',
-  featured: false,
   company_id: '',
 };
 
@@ -36,25 +35,25 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const { user, isAdmin, isCompany, userCompanyId, loading, signOut } = useAuth();
   const qc = useQueryClient();
-  const rawEvents = useEvents(); 
-  const events = isAdmin 
-    ? (rawEvents.data || []) 
+  const rawEvents = useEvents();
+  const events = isAdmin
+    ? (rawEvents.data || [])
     : (rawEvents.data || []).filter(e => e.company_id === userCompanyId);
-  
+
   const loadingEvents = rawEvents.isLoading;
   const { data: companies = [], isLoading: loadingCompanies } = useCompanies();
   const createCompany = useCreateCompany();
   const deleteCompany = useDeleteCompany();
 
   const [activeTab, setActiveTab] = useState<'events' | 'companies'>('events');
-  
+
   const [showEventForm, setShowEventForm] = useState(false);
   const [showCompanyForm, setShowCompanyForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  
+
   const [eventForm, setEventForm] = useState(emptyEventForm);
   const [companyForm, setCompanyForm] = useState(emptyCompanyForm);
-  
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -100,7 +99,6 @@ export default function AdminPage() {
       location: event.location,
       description: event.description,
       image_url: event.image_url ?? '',
-      featured: event.featured ?? false,
       company_id: event.company_id ?? '',
     });
     setEditId(event.id);
@@ -111,14 +109,14 @@ export default function AdminPage() {
     if (!imageFile) return eventForm.image_url;
     const ext = imageFile.name.split('.').pop();
     const path = `${Date.now()}.${ext}`;
-    
+
     try {
       const { error } = await supabase.storage.from('event-images').upload(path, imageFile);
       if (error) {
         console.error('Error de Storage:', error);
         throw new Error(`No se pudo subir la imagen. Asegúrate de que el bucket "event-images" existe en Supabase y tiene políticas de subida activas. Detalle: ${error.message}`);
       }
-      
+
       const { data } = supabase.storage.from('event-images').getPublicUrl(path);
       return data.publicUrl;
     } catch (err: any) {
@@ -219,7 +217,7 @@ export default function AdminPage() {
             owner_email: companyForm.email,
           })
           .eq('id', editId);
-        
+
         if (updateErr) throw updateErr;
       } else {
         // Create new company
@@ -233,7 +231,7 @@ export default function AdminPage() {
           })
           .select()
           .single();
-        
+
         if (companyErr) throw companyErr;
 
         // 2. Create Auth user for the new company
@@ -241,7 +239,7 @@ export default function AdminPage() {
           const { createClient } = await import('@supabase/supabase-js');
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
           const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          
+
           const tempClient = createClient(supabaseUrl, supabaseKey, {
             auth: { persistSession: false }
           });
@@ -295,7 +293,7 @@ export default function AdminPage() {
         .from('events')
         .update({ company_id: null })
         .eq('company_id', id);
-      
+
       if (eventError) throw eventError;
 
       // 2. Eliminar miembros de la empresa (si los hay)
@@ -303,7 +301,7 @@ export default function AdminPage() {
         .from('company_members')
         .delete()
         .eq('company_id', id);
-      
+
       if (memberError) throw memberError;
 
       // 3. Eliminar la empresa definitivamente
@@ -335,8 +333,8 @@ export default function AdminPage() {
           <p className="text-xs text-sidebar-foreground/60">Panel de Administración</p>
         </div>
         <div className="flex items-center gap-4">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center gap-2 bg-sidebar-accent hover:bg-primary hover:text-primary-foreground text-sidebar-foreground px-4 py-2 rounded-full text-sm font-medium transition-all"
           >
             <Sparkles className="w-4 h-4" />
@@ -356,14 +354,14 @@ export default function AdminPage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Navigation Tabs */}
         <div className="flex gap-4 mb-8 border-b border-border pb-4">
-          <button 
+          <button
             onClick={() => setActiveTab('events')}
             className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'events' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
           >
             Eventos
           </button>
           {isAdmin && (
-            <button 
+            <button
               onClick={() => setActiveTab('companies')}
               className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'companies' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
             >
@@ -419,56 +417,56 @@ export default function AdminPage() {
                 {events.map(event => {
                   const company = companies.find(c => c.id === event.company_id);
                   return (
-                  <div
-                    key={event.id}
-                    className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-shadow hover:border-primary/30 transition-all"
-                  >
-                    {event.image_url && (
-                      <img
-                        src={event.image_url}
-                        alt={event.title}
-                        className="w-16 h-16 rounded-xl object-cover hidden sm:block"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
-                        {event.featured && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">⭐ Destacado</span>}
-                      </div>
-                      <div className="flex gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="w-3.5 h-3.5" />
-                          {format(parseISO(event.event_date), 'd MMM yyyy', { locale: es })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5" />
-                          {event.location}
-                        </span>
-                        <span className="px-2 py-0.5 bg-muted rounded-full text-xs">{event.category}</span>
-                        {company && (
-                          <span className="flex items-center gap-1 text-primary">
-                            <Building2 className="w-3.5 h-3.5" />
-                            {company.name}
+                    <div
+                      key={event.id}
+                      className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-shadow hover:border-primary/30 transition-all"
+                    >
+                      {event.image_url && (
+                        <img
+                          src={event.image_url}
+                          alt={event.title}
+                          className="w-16 h-16 rounded-xl object-cover hidden sm:block"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
+                        </div>
+                        <div className="flex gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <CalendarDays className="w-3.5 h-3.5" />
+                            {format(parseISO(event.event_date), 'd MMM yyyy', { locale: es })}
                           </span>
-                        )}
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {event.location}
+                          </span>
+                          <span className="px-2 py-0.5 bg-muted rounded-full text-xs">{event.category}</span>
+                          {company && (
+                            <span className="flex items-center gap-1 text-primary">
+                              <Building2 className="w-3.5 h-3.5" />
+                              {company.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => startEditEvent(event)}
+                          className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete({ id: event.id, type: 'event' })}
+                          className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button
-                        onClick={() => startEditEvent(event)}
-                        className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setConfirmDelete({ id: event.id, type: 'event' })}
-                        className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )})}
+                  )
+                })}
               </div>
             )}
           </>
@@ -485,7 +483,7 @@ export default function AdminPage() {
                 Nueva Empresa
               </button>
             </div>
-            
+
             {loadingCompanies ? (
               <div className="flex justify-center py-20">
                 <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
@@ -572,7 +570,7 @@ export default function AdminPage() {
                       {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
-                  
+
                   {!isCompany && (
                     <div>
                       <label className="block text-sm font-semibold mb-1">Empresa</label>
@@ -655,16 +653,7 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="featured"
-                      checked={eventForm.featured}
-                      onChange={e => setEventForm({ ...eventForm, featured: e.target.checked })}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="featured" className="text-sm font-semibold">⭐ Evento destacado</label>
-                  </div>
+
                 </div>
 
                 {error && (
@@ -807,7 +796,7 @@ export default function AdminPage() {
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-4">
             <AlertDialogCancel className="rounded-xl border-2 hover:bg-muted font-semibold">Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={() => confirmDelete?.type === 'event' ? handleDeleteEvent(confirmDelete.id) : handleDeleteCompany(confirmDelete.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold px-6"
             >

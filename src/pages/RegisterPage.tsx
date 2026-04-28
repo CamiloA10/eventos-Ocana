@@ -17,17 +17,17 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
-    
+
     setLoading(true);
 
     try {
-      const { error, data } = await supabase.auth.signUp({ 
-        email, 
+      const { error, data } = await supabase.auth.signUp({
+        email,
         password,
         options: {
           data: {

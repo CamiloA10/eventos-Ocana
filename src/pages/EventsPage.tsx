@@ -19,16 +19,16 @@ export default function EventsPage() {
   const { user } = useAuth();
   const { data: savedEventIds = [] } = useSavedEvents(user?.id);
 
-  const internalCat = category === 'Destacados' ? 'Todos' : category;
+  const internalCat = category === 'Favoritos' ? 'Todos' : category;
   const { data: allEvents = [], isLoading } = useEvents(internalCat, search);
 
-  const events = category === 'Destacados'
+  const events = category === 'Favoritos'
     ? allEvents.filter(e => savedEventIds.includes(e.id))
     : allEvents;
 
   const categories = [...CATEGORIES];
   if (user) {
-    categories.push('Destacados');
+    categories.push('Favoritos');
   }
 
   return (
@@ -61,11 +61,11 @@ export default function EventsPage() {
                 key={cat}
                 onClick={() => setCategory(cat)}
                 className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all ${category === cat
-                    ? 'bg-primary text-primary-foreground shadow-md scale-105'
-                    : 'bg-card border-2 border-border text-foreground hover:border-primary'
+                  ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                  : 'bg-card border-2 border-border text-foreground hover:border-primary'
                   }`}
               >
-                {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : cat === 'Religioso' ? '⛪' : cat === 'Destacados' ? <Star className="w-4 h-4" /> : '📋'}
+                {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : cat === 'Religioso' ? '⛪' : cat === 'Favoritos' ? <Star className="w-4 h-4" /> : '📋'}
                 {cat}
               </button>
             ))}

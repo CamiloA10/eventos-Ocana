@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Menu, X, LogOut, LayoutDashboard, Sparkles, Bell } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Sparkles, Bell, Heart } from 'lucide-react';
 import NotificationPreferences from './NotificationPreferences';
 
 export default function Navbar() {
@@ -18,12 +18,11 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
-        scrolled 
-          ? 'bg-white shadow-md border-b border-slate-100 py-3' 
-          : 'bg-white/90 backdrop-blur-sm py-4'
-      }`}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${scrolled
+        ? 'bg-white shadow-md border-b border-slate-100 py-3'
+        : 'bg-white/90 backdrop-blur-sm py-4'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
@@ -40,7 +39,14 @@ export default function Navbar() {
           <Link to="/eventos" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">
             Eventos
           </Link>
-          
+
+          {user && (
+            <Link to="/eventos?categoria=Favoritos" className="flex items-center gap-2 text-sm font-bold text-slate-900 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors">
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              Mis Favoritos
+            </Link>
+          )}
+
           {isAdmin && (
             <Link to="/admin" className="flex items-center gap-2 text-sm font-bold text-slate-900 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors">
               <LayoutDashboard className="w-4 h-4" />
@@ -89,6 +95,12 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 px-6 py-8 flex flex-col gap-6 animate-in slide-in-from-top-4 duration-200">
           <Link to="/eventos" className="text-xl font-bold text-slate-900" onClick={() => setOpen(false)}>Eventos</Link>
+          {user && (
+            <Link to="/eventos?categoria=Favoritos" className="flex items-center gap-3 text-xl font-bold text-slate-900" onClick={() => setOpen(false)}>
+              <Heart className="w-6 h-6 text-red-500 fill-red-500" />
+              Mis Favoritos
+            </Link>
+          )}
           {isAdmin && (
             <Link to="/admin" className="text-xl font-bold text-blue-600" onClick={() => setOpen(false)}>Administrar</Link>
           )}
