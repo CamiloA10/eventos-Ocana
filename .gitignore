@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Agent Skills
+.agents/
+.claude/
+.junie/
+skills-lock.json
+
