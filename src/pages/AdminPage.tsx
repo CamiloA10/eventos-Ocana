@@ -11,11 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico', 'Religioso'] as const;
+const RELIGIOUS_SUB_CATEGORIES = ['Iglesia Católica', 'Iglesia Evangélica'] as const;
 type Category = typeof CATEGORIES[number];
 
 const emptyEventForm = {
   title: '',
   category: 'Cultural' as Category,
+  sub_category: '',
   event_date: '',
   event_time: '',
   location: '',
@@ -94,6 +96,7 @@ export default function AdminPage() {
     setEventForm({
       title: event.title,
       category: event.category as Category,
+      sub_category: event.sub_category ?? '',
       event_date: event.event_date,
       event_time: event.event_time ?? '',
       location: event.location,
@@ -142,6 +145,7 @@ export default function AdminPage() {
         event_time: eventForm.event_time || null,
         company_id: isCompany ? userCompanyId : (eventForm.company_id || null),
         created_by: user.id,
+        sub_category: eventForm.category === 'Religioso' ? eventForm.sub_category : null,
       };
 
       if (editId) {
@@ -564,12 +568,32 @@ export default function AdminPage() {
                     <label className="block text-sm font-semibold mb-1">Categoría *</label>
                     <select
                       value={eventForm.category}
-                      onChange={e => setEventForm({ ...eventForm, category: e.target.value as Category })}
+                      onChange={e => {
+                        const newCat = e.target.value as Category;
+                        setEventForm({
+                          ...eventForm,
+                          category: newCat,
+                          sub_category: newCat === 'Religioso' ? 'Iglesia Católica' : ''
+                        });
+                      }}
                       className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
                     >
                       {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
+
+                  {eventForm.category === 'Religioso' && (
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+                      <label className="block text-sm font-semibold mb-1 text-primary">Denominación *</label>
+                      <select
+                        value={eventForm.sub_category}
+                        onChange={e => setEventForm({ ...eventForm, sub_category: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl border-2 border-primary/50 bg-primary/5 focus:outline-none focus:border-primary transition-colors"
+                      >
+                        {RELIGIOUS_SUB_CATEGORIES.map(sc => <option key={sc}>{sc}</option>)}
+                      </select>
+                    </div>
+                  )}
 
                   {!isCompany && (
                     <div>

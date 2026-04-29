@@ -21,6 +21,15 @@ export default function Index() {
     }
   };
 
+  const [showReligiousSubs, setShowReligiousSubs] = useState(false);
+
+  const categories = [
+    { label: 'Cultural', tag: 'Arte & Música', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', count: '12 eventos' },
+    { label: 'Deportivo', tag: 'Acción & Salud', img: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', count: '8 eventos' },
+    { label: 'Turístico', tag: 'Rutas & Aventura', img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', count: '5 eventos' },
+    { label: 'Religioso', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: '4 eventos' },
+  ];
+
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 font-sans antialiased">
       <Navbar />
@@ -155,31 +164,66 @@ export default function Index() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { label: 'Cultural', tag: 'Arte & Música', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', count: '12 eventos' },
-              { label: 'Deportivo', tag: 'Acción & Salud', img: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', count: '8 eventos' },
-              { label: 'Turístico', tag: 'Rutas & Aventura', img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', count: '5 eventos' },
-              { label: 'Religioso', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: '4 eventos' },
-            ].map((cat) => (
-              <Link
-                key={cat.label}
-                to={`/eventos?categoria=${cat.label}`}
-                className="group relative h-[450px] rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200 border border-slate-100 bg-slate-100 transition-all hover:-translate-y-2 duration-500"
-              >
-                <img src={cat.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={cat.label} />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+            {!showReligiousSubs ? (
+              categories.map((cat) => (
+                <div
+                  key={cat.label}
+                  onClick={() => {
+                    if (cat.label === 'Religioso') {
+                      setShowReligiousSubs(true);
+                    } else {
+                      navigate(`/eventos?categoria=${cat.label}`);
+                    }
+                  }}
+                  className="group relative h-[450px] rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200 border border-slate-100 bg-slate-100 transition-all hover:-translate-y-2 duration-500 cursor-pointer"
+                >
+                  <img src={cat.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={cat.label} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
-                <div className="absolute inset-0 p-10 flex flex-col justify-end">
-                  <div className="bg-blue-600/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-bold text-[10px] uppercase tracking-widest w-fit mb-4">
-                    {cat.tag}
-                  </div>
-                  <h3 className="text-4xl font-bold text-white mb-2">{cat.label}</h3>
-                  <div className="flex items-center gap-2 text-white/70 font-semibold group-hover:text-white transition-colors">
-                    {cat.count} <ArrowRight className="w-4 h-4" />
+                  <div className="absolute inset-0 p-10 flex flex-col justify-end">
+                    <div className="bg-blue-600/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-bold text-[10px] uppercase tracking-widest w-fit mb-4">
+                      {cat.tag}
+                    </div>
+                    <h3 className="text-4xl font-bold text-white mb-2">{cat.label}</h3>
+                    <div className="flex items-center gap-2 text-white/70 font-semibold group-hover:text-white transition-colors">
+                      {cat.count} <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
-              </Link>
-            ))}
+              ))
+            ) : (
+              <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {[
+                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: '3 eventos' },
+                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/iglesia_evangelica.png', count: '1 evento' },
+                ].map((sub) => (
+                  <Link
+                    key={sub.label}
+                    to={`/eventos?categoria=Religioso&subcategoria=${sub.label}`}
+                    className="group relative h-[450px] rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200 border border-slate-100 bg-slate-100 transition-all hover:-translate-y-2 duration-500"
+                  >
+                    <img src={sub.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={sub.label} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                    <div className="absolute inset-0 p-10 flex flex-col justify-end">
+                      <div className="bg-blue-600/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-bold text-[10px] uppercase tracking-widest w-fit mb-4">
+                        {sub.tag}
+                      </div>
+                      <h3 className="text-4xl font-bold text-white mb-2">{sub.label}</h3>
+                      <div className="flex items-center gap-2 text-white/70 font-semibold group-hover:text-white transition-colors">
+                        {sub.count} <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                <button
+                  onClick={() => setShowReligiousSubs(false)}
+                  className="col-span-full mt-4 text-blue-600 font-bold hover:underline"
+                >
+                  ← Volver a todas las categorías
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>

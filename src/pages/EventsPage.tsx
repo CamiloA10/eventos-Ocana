@@ -7,20 +7,23 @@ import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
 
 const CATEGORIES = ['Todos', 'Cultural', 'Deportivo', 'Turístico', 'Religioso'];
+const RELIGIOUS_SUB_CATEGORIES = ['Todas', 'Iglesia Católica', 'Iglesia Evangélica'];
 
 export default function EventsPage() {
   const [searchParams] = useSearchParams();
   const initCat = searchParams.get('categoria') ?? 'Todos';
+  const initSubCat = searchParams.get('subcategoria') ?? 'Todas';
   const initSearch = searchParams.get('search') ?? '';
 
   const [category, setCategory] = useState(initCat);
+  const [subCategory, setSubCategory] = useState(initSubCat);
   const [search, setSearch] = useState(initSearch);
 
   const { user } = useAuth();
   const { data: savedEventIds = [] } = useSavedEvents(user?.id);
 
   const internalCat = category === 'Favoritos' ? 'Todos' : category;
-  const { data: allEvents = [], isLoading } = useEvents(internalCat, search);
+  const { data: allEvents = [], isLoading } = useEvents(internalCat, search, category === 'Religioso' ? subCategory : undefined);
 
   const events = category === 'Favoritos'
     ? allEvents.filter(e => savedEventIds.includes(e.id))
@@ -43,33 +46,59 @@ export default function EventsPage() {
         </div>
 
         {/* Search & Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-10">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-            />
+        <div className="space-y-6 mb-10">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setCategory(cat);
+                    setSubCategory('Todas');
+                  }}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all ${category === cat
+                    ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                    : 'bg-card border-2 border-border text-foreground hover:border-primary'
+                    }`}
+                >
+                  {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : cat === 'Religioso' ? '⛪' : cat === 'Favoritos' ? <Star className="w-4 h-4" /> : '📋'}
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm transition-all ${category === cat
-                  ? 'bg-primary text-primary-foreground shadow-md scale-105'
-                  : 'bg-card border-2 border-border text-foreground hover:border-primary'
-                  }`}
-              >
-                {cat === 'Cultural' ? '🎭' : cat === 'Deportivo' ? '⚽' : cat === 'Turístico' ? '🗺️' : cat === 'Religioso' ? '⛪' : cat === 'Favoritos' ? <Star className="w-4 h-4" /> : '📋'}
-                {cat}
-              </button>
-            ))}
-          </div>
+          {/* Sub-categories for Religious */}
+          {category === 'Religioso' && (
+            <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-4">Filtrar por:</span>
+              <div className="flex gap-2 flex-wrap">
+                {RELIGIOUS_SUB_CATEGORIES.map((sub) => (
+                  <button
+                    key={sub}
+                    onClick={() => setSubCategory(sub)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${subCategory === sub
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Events grid */}
