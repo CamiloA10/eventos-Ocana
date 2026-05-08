@@ -1,14 +1,13 @@
 # Issue Tracker: GitHub
 
-We track all work for this project using **GitHub Issues**.
+Issues for this repository are tracked using GitHub Issues.
 
 ## Workflow
 
-- **Creation**: Use `gh issue create` to add new issues. Vertical slices (using `/to-issues`) are preferred.
-- **Triaging**: Use `/triage` to move issues through their lifecycle.
-- **Implementation**: When starting work, reference the issue number in commits and PRs.
+- **Creation**: When using `to-issues` or `to-prd`, create issues using the `gh issue create` command.
+- **Triage**: When using `triage`, read and update issues using `gh issue list` and `gh issue edit`.
+- **Reference**: Always refer to issues by their number (e.g. #123).
 
-## Configuration
+## Tooling
 
-- **Remote**: `origin`
-- **Tool**: `gh` CLI
+- Ensure the `gh` CLI is installed and authenticated.

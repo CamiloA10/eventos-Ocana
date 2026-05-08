@@ -1,14 +1,14 @@
 # Domain Documentation
 
-This project uses a single-context layout for domain knowledge.
+This repository uses a **single-context** layout for domain documentation.
 
-## Layout
+## Sources
 
-- **Language**: Defined in `CONTEXT.md` at the repository root.
-- **Decisions**: Architectural decisions are recorded in `docs/adr/`.
+- **Primary Context**: `CONTEXT.md` at the repository root. This file defines the "Ubiquitous Language" and core domain models.
+- **Architectural Decisions**: `docs/adr/*.md`. These files record past architectural choices and their rationale.
 
 ## Rules for Agents
 
-- Always read `CONTEXT.md` before starting a task to ensure consistent terminology.
-- Check `docs/adr/` for constraints and past context.
-- Update `CONTEXT.md` when new domain concepts are introduced or terminology is sharpened.
+1. **Read First**: Always read `CONTEXT.md` before proposing or implementing changes.
+2. **Update**: Use `grill-with-docs` to sharpen terminology and keep these documents in sync with the implementation.
+3. **Consistency**: Use the terms defined in `CONTEXT.md` in code, PRDs, and issues.

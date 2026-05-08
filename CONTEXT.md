@@ -10,6 +10,7 @@ A platform to discover, manage, and promote events in the city of Ocaña. The go
 - **Category (Categoría)**: A top-level classification (e.g., Religioso, Comercial, Institucional).
 - **Sub-category (Sub-categoría)**: A more specific classification (e.g., Iglesia Católica, Iglesia Evangélica under Religioso).
 - **Favorite (Favorito)**: A personalized bookmark for a user to track events they are interested in.
+- **Location (Ubicación)**: The physical place where an event happens. Linked to Google Maps for user navigation.
 - **CEDIT**: The institutional branding and technical platform provider.
 
 ## Technical Rules

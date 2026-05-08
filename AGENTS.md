@@ -10,11 +10,11 @@ Tracked via **GitHub Issues**. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Standard 5-role vocabulary. See `docs/agents/triage-labels.md`.
+Standard 5-role vocabulary mapping. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-**Single-context** layout. See `docs/agents/domain.md`.
+**Single-context** layout (root `CONTEXT.md`). See `docs/agents/domain.md`.
 
 ---
 

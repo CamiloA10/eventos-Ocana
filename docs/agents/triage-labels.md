@@ -1,17 +1,15 @@
 # Triage Labels
 
-We use labels to manage the lifecycle of issues. Each canonical role is mapped to a GitHub label.
+The `triage` skill moves issues through a state machine using the following labels.
 
-## Mappings
+## Label Mapping
 
-| Role | Label | Description |
-|------|-------|-------------|
-| `needs-triage` | `needs-triage` | Default role for new issues. Needs evaluation. |
-| `needs-info` | `needs-info` | Blocked waiting on the reporter. |
-| `ready-for-agent` | `ready-for-agent` | Fully specified and ready for an AI agent to implement. |
-| `ready-for-human` | `ready-for-human` | Requires human implementation or complex decision making. |
-| `wontfix` | `wontfix` | Decided not to implement. |
+- **needs-triage**: The maintainer needs to evaluate this issue.
+- **needs-info**: Waiting on the reporter to provide more details.
+- **ready-for-agent**: Fully specified and ready for an AFK agent to pick up.
+- **ready-for-human**: Needs human implementation or complex review.
+- **wontfix**: The issue will not be actioned.
 
 ## Usage
 
-The `/triage` skill will apply these labels to move issues through the state machine.
+Agents should apply these labels precisely to reflect the current state of an issue.
