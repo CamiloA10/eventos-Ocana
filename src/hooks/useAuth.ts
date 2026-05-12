@@ -6,8 +6,8 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isCompany, setIsCompany] = useState(false);
-  const [userCompanyId, setUserCompanyId] = useState<string | null>(null);
+  const [isAliado, setIsAliado] = useState(false);
+  const [userAliadoId, setUserAliadoId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,24 +24,24 @@ export function useAuth() {
           });
           setIsAdmin(!!roleData);
 
-          // Check for company association in metadata or a specific claim
-          const companyId = session.user.user_metadata?.company_id;
-          if (companyId) {
-            setIsCompany(true);
-            setUserCompanyId(companyId);
+          // Check for aliado association in metadata or a specific claim
+          const aliadoId = session.user.user_metadata?.aliado_id;
+          if (aliadoId) {
+            setIsAliado(true);
+            setUserAliadoId(aliadoId);
           } else {
-            setIsCompany(false);
-            setUserCompanyId(null);
+            setIsAliado(false);
+            setUserAliadoId(null);
           }
         } catch (err) {
           console.error("Error fetching role:", err);
           setIsAdmin(false);
-          setIsCompany(false);
+          setIsAliado(false);
         }
       } else {
         setIsAdmin(false);
-        setIsCompany(false);
-        setUserCompanyId(null);
+        setIsAliado(false);
+        setUserAliadoId(null);
       }
       setLoading(false);
     };
@@ -61,5 +61,5 @@ export function useAuth() {
 
   const signOut = () => supabase.auth.signOut();
 
-  return { user, session, isAdmin, isCompany, userCompanyId, loading, signOut };
+  return { user, session, isAdmin, isAliado, userAliadoId, loading, signOut };
 }

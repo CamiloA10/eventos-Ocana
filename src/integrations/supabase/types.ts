@@ -14,31 +14,43 @@ export type Database = {
   }
   public: {
     Tables: {
-      companies: {
+      aliados: {
         Row: {
           id: string
           name: string
           description: string | null
+          category: string | null
+          sub_category: string | null
           created_at: string
+          owner_email: string | null
+          user_id: string | null
         }
         Insert: {
           id?: string
           name: string
           description?: string | null
+          category?: string | null
+          sub_category?: string | null
           created_at?: string
+          owner_email?: string | null
+          user_id?: string | null
         }
         Update: {
           id?: string
           name?: string
           description?: string | null
+          category?: string | null
+          sub_category?: string | null
           created_at?: string
+          owner_email?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
       events: {
         Row: {
           category: string
-          company_id: string | null
+          aliado_id: string | null
           created_at: string
           created_by: string | null
           description: string
@@ -53,7 +65,7 @@ export type Database = {
         }
         Insert: {
           category: string
-          company_id?: string | null
+          aliado_id?: string | null
           created_at?: string
           created_by?: string | null
           description: string
@@ -68,7 +80,7 @@ export type Database = {
         }
         Update: {
           category?: string
-          company_id?: string | null
+          aliado_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
@@ -83,10 +95,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "events_company_id_fkey"
-            columns: ["company_id"]
+            foreignKeyName: "events_aliado_id_fkey"
+            columns: ["aliado_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "aliados"
             referencedColumns: ["id"]
           }
         ]

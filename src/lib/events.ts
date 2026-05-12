@@ -11,8 +11,19 @@ export type Event = {
   category: string;
   sub_category?: string;
   featured: boolean;
-  company_id: string;
+  aliado_id: string;
   attendance_count?: { count: number }[];
+};
+
+export type Aliado = {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  sub_category: string | null;
+  created_at: string;
+  owner_email?: string;
+  user_id?: string;
 };
 
 export type EventFilters = {
@@ -23,7 +34,7 @@ export type EventFilters = {
 
 export type EventStats = {
   events: number;
-  companies: number;
+  aliados: number;
   attendance: number;
 };
 
@@ -38,7 +49,7 @@ const STATIC_RELIGIOUS_EVENTS: Event[] = [
     sub_category: "Iglesia Católica",
     image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png",
     featured: true,
-    company_id: ""
+    aliado_id: ""
   },
   {
     id: 'static-2',
@@ -50,7 +61,7 @@ const STATIC_RELIGIOUS_EVENTS: Event[] = [
     sub_category: "Iglesia Católica",
     image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/procesion_semana_santa.png",
     featured: false,
-    company_id: ""
+    aliado_id: ""
   },
   {
     id: 'static-3',
@@ -62,7 +73,7 @@ const STATIC_RELIGIOUS_EVENTS: Event[] = [
     sub_category: "Iglesia Católica",
     image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/misa_catedral.png",
     featured: true,
-    company_id: ""
+    aliado_id: ""
   },
   {
     id: 'static-4',
@@ -74,7 +85,7 @@ const STATIC_RELIGIOUS_EVENTS: Event[] = [
     sub_category: "Iglesia Evangélica",
     image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/iglesia_evangelica.png",
     featured: false,
-    company_id: ""
+    aliado_id: ""
   }
 ];
 
@@ -160,20 +171,20 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
 }
 
 /**
- * Fetches global event and company statistics.
+ * Fetches global event and aliado statistics.
  */
 export async function fetchEventStats(): Promise<EventStats> {
   const today = new Date().toISOString().split('T')[0];
   
-  const [eventsRes, companiesRes, attendanceRes] = await Promise.all([
+  const [eventsRes, aliadosRes, attendanceRes] = await Promise.all([
     supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today),
-    supabase.from('companies').select('*', { count: 'exact', head: true }),
+    supabase.from('aliados').select('*', { count: 'exact', head: true }),
     supabase.from('saved_events').select('*', { count: 'exact', head: true })
   ]);
 
   return {
     events: eventsRes.count ?? 0,
-    companies: companiesRes.count ?? 0,
+    aliados: aliadosRes.count ?? 0,
     attendance: (attendanceRes.count ?? 0) + 150 // Including baseline for proof-of-concept
   };
 }

@@ -5,10 +5,10 @@ import {
   fetchEventStats, 
   fetchFeaturedEvents,
   type Event, 
-  type Company 
+  type Aliado 
 } from '@/lib/events';
 
-export type { Event, Company };
+export type { Event, Aliado };
 
 export function useEvents(category?: string, searchTerm?: string, subCategory?: string) {
   return useQuery({
@@ -81,36 +81,36 @@ export function useSaveEvent() {
   });
 }
 
-export function useCompanies() {
+export function useAliados() {
   return useQuery({
-    queryKey: ['companies'],
+    queryKey: ['aliados'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('companies').select('*');
+      const { data, error } = await supabase.from('aliados').select('*');
       if (error) throw error;
-      return data as Company[];
+      return data as Aliado[];
     },
   });
 }
 
-export function useCreateCompany() {
+export function useCreateAliado() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (company: Partial<Company>) => {
-      const { error } = await supabase.from('companies').insert(company);
+    mutationFn: async (aliado: Partial<Aliado>) => {
+      const { error } = await supabase.from('aliados').insert(aliado);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['companies'] })
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['aliados'] })
   });
 }
 
-export function useDeleteCompany() {
+export function useDeleteAliado() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('companies').delete().eq('id', id);
+      const { error } = await supabase.from('aliados').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['companies'] })
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['aliados'] })
   });
 }
 export function useStats() {

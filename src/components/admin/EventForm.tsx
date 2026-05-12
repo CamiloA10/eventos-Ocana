@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Check, Image as ImageIcon } from 'lucide-react';
-import { type Event, type Company } from '@/lib/events';
+import { type Event, type Aliado } from '@/lib/events';
 
 const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico', 'Religioso'] as const;
 const RELIGIOUS_SUB_CATEGORIES = ['Iglesia Católica', 'Iglesia Evangélica'] as const;
@@ -9,8 +9,8 @@ type Category = typeof CATEGORIES[number];
 interface EventFormProps {
   editId: string | null;
   initialData: any;
-  companies: Company[];
-  isCompany: boolean;
+  aliados: Aliado[];
+  isAliado: boolean;
   onSubmit: (payload: any, imageFile: File | null) => Promise<void>;
   onCancel: () => void;
   submitting: boolean;
@@ -20,8 +20,8 @@ interface EventFormProps {
 export function EventForm({
   editId,
   initialData,
-  companies,
-  isCompany,
+  aliados,
+  isAliado,
   onSubmit,
   onCancel,
   submitting,
@@ -29,6 +29,9 @@ export function EventForm({
 }: EventFormProps) {
   const [form, setForm] = useState(initialData);
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const currentAliado = isAliado ? null : aliados.find(a => a.id === form.aliado_id);
+  const displayCategory = isAliado ? (form.category || 'Cultural') : (currentAliado?.category || form.category);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,50 +63,50 @@ export function EventForm({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-1">Categoría *</label>
-              <select
-                value={form.category}
-                onChange={e => {
-                  const newCat = e.target.value as Category;
-                  setForm({
-                    ...form,
-                    category: newCat,
-                    sub_category: newCat === 'Religioso' ? 'Iglesia Católica' : ''
-                  });
-                }}
-                className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
-              >
-                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-
-            {form.category === 'Religioso' && (
-              <div className="animate-in fade-in slide-in-from-top-1 duration-300">
-                <label className="block text-sm font-semibold mb-1 text-primary">Denominación *</label>
-                <select
-                  value={form.sub_category}
-                  onChange={e => setForm({ ...form, sub_category: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-primary/50 bg-primary/5 focus:outline-none focus:border-primary transition-colors"
-                >
-                  {RELIGIOUS_SUB_CATEGORIES.map(sc => <option key={sc}>{sc}</option>)}
-                </select>
-              </div>
-            )}
-
-            {!isCompany && (
+            {!isAliado && (
               <div>
-                <label className="block text-sm font-semibold mb-1">Empresa</label>
+                <label className="block text-sm font-semibold mb-1">Aliado Responsable *</label>
                 <select
-                  value={form.company_id}
-                  onChange={e => setForm({ ...form, company_id: e.target.value })}
+                  required
+                  value={form.aliado_id}
+                  onChange={e => {
+                    const aId = e.target.value;
+                    const selected = aliados.find(a => a.id === aId);
+                    setForm({ 
+                      ...form, 
+                      aliado_id: aId,
+                      category: selected?.category || form.category,
+                      sub_category: selected?.category === 'Religioso' ? selected.sub_category : ''
+                    });
+                  }}
                   className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
                 >
-                  <option value="">Ninguna</option>
-                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  <option value="">Seleccionar aliado...</option>
+                  {aliados.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-semibold mb-1">Categoría</label>
+              <div className="px-4 py-2.5 rounded-xl border-2 border-border bg-muted/50 text-foreground font-semibold flex items-center justify-between">
+                <span>{displayCategory}</span>
+                {isAliado && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Asignada</span>}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {isAliado ? 'Tu categoría es asignada por la administración.' : 'La categoría se hereda del aliado seleccionado.'}
+              </p>
+            </div>
+
+            {displayCategory === 'Religioso' && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+                <label className="block text-sm font-semibold mb-1 text-primary">Denominación</label>
+                <div className="px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold">
+                  {isAliado ? form.sub_category : (currentAliado?.sub_category || form.sub_category)}
+                </div>
+              </div>
+            )}
+
 
             <div>
               <label className="block text-sm font-semibold mb-1">Fecha *</label>
