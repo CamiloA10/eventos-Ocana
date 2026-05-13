@@ -119,9 +119,9 @@ function normalizeEvent(event: any): Event {
  */
 export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> {
   const { category, subCategory, searchTerm } = filters;
-  
+
   let query = supabase.from('events').select('*, attendance_count:saved_events(count)');
-  
+
   if (category && category !== 'Todos') {
     if (category === 'Religioso') {
       // Support legacy categories in query
@@ -134,23 +134,23 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
   if (subCategory && subCategory !== 'Todas') {
     query = query.eq('sub_category', subCategory);
   }
-  
+
   if (searchTerm) {
     query = query.ilike('title', `%${searchTerm}%`);
   }
-  
+
   const { data, error } = await query.order('event_date', { ascending: true });
   if (error) throw error;
-  
+
   let dbEvents = (data || []).map(normalizeEvent);
-  
+
   // Merge with static data if relevant
   const shouldIncludeStatic = !category || category === 'Todos' || category === 'Religioso';
-  
+
   if (shouldIncludeStatic) {
     const uniqueStatic = STATIC_RELIGIOUS_EVENTS.filter(staticEvent => {
       // Avoid duplicates by title
-      const alreadyInDb = dbEvents.some(dbEvent => 
+      const alreadyInDb = dbEvents.some(dbEvent =>
         dbEvent.title.toLowerCase().trim() === staticEvent.title.toLowerCase().trim()
       );
       if (alreadyInDb) return false;
@@ -163,7 +163,7 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
       }
       return false;
     });
-    
+
     dbEvents = [...dbEvents, ...uniqueStatic];
   }
 
@@ -189,6 +189,26 @@ export async function fetchEventStats(): Promise<EventStats> {
   };
 }
 
+export async function fetchAdminStats() {
+  const today = new Date().toISOString().split('T')[0];
+
+  const [activeEventsRes, pastEventsRes, usersRes, aliadosRes, savedRes] = await Promise.all([
+    supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today),
+    supabase.from('events').select('*', { count: 'exact', head: true }).lt('event_date', today),
+    supabase.from('user_roles').select('*', { count: 'exact', head: true }),
+    supabase.from('aliados').select('*', { count: 'exact', head: true }),
+    supabase.from('saved_events').select('*', { count: 'exact', head: true })
+  ]);
+
+  return {
+    activeEvents: activeEventsRes.count ?? 0,
+    pastEvents: pastEventsRes.count ?? 0,
+    users: usersRes.count ?? 0,
+    aliados: aliadosRes.count ?? 0,
+    savedEvents: savedRes.count ?? 0
+  };
+}
+
 export async function fetchFeaturedEvents(): Promise<Event[]> {
   const { data, error } = await supabase
     .from('events')
@@ -196,7 +216,7 @@ export async function fetchFeaturedEvents(): Promise<Event[]> {
     .eq('featured', true)
     .order('event_date', { ascending: true })
     .limit(3);
-    
+
   if (error) throw error;
   return (data || []).map(normalizeEvent);
 }

@@ -18,6 +18,10 @@ export function useEventDirectory(filters: EventFilters & { userId?: string, sho
       // Fetch base events
       let events = await fetchEvents({ category, subCategory, searchTerm });
 
+      // Filter out past events for public view
+      const today = new Date().toISOString().split('T')[0];
+      events = events.filter(e => e.event_date >= today);
+
       // If showFavorites is enabled, we filter by saved events
       if (showFavorites && userId) {
         const { data: saved, error } = await supabase

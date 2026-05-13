@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  fetchEvents, 
-  fetchEventStats, 
+import {
+  fetchEvents,
+  fetchEventStats,
   fetchFeaturedEvents,
-  type Event, 
-  type Aliado 
+  fetchAdminStats,
+  type Event,
+  type Aliado
 } from '@/lib/events';
 
 export type { Event, Aliado };
@@ -117,5 +118,12 @@ export function useStats() {
   return useQuery({
     queryKey: ['stats'],
     queryFn: fetchEventStats,
+  });
+}
+
+export function useAdminStats() {
+  return useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: fetchAdminStats,
   });
 }

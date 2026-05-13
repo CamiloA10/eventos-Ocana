@@ -31,7 +31,10 @@ export function EventForm({
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const currentAliado = isAliado ? null : aliados.find(a => a.id === form.aliado_id);
-  const displayCategory = isAliado ? (form.category || 'Cultural') : (currentAliado?.category || form.category);
+  const displayCategory = isAliado ? (form.category || 'Tu categoría asignada') : (currentAliado?.category || form.category || 'Esperando selección...');
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const minDate = editId && form.event_date && form.event_date < todayStr ? form.event_date : todayStr;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +75,8 @@ export function EventForm({
                   onChange={e => {
                     const aId = e.target.value;
                     const selected = aliados.find(a => a.id === aId);
-                    setForm({ 
-                      ...form, 
+                    setForm({
+                      ...form,
                       aliado_id: aId,
                       category: selected?.category || form.category,
                       sub_category: selected?.category === 'Religioso' ? selected.sub_category : ''
@@ -89,8 +92,10 @@ export function EventForm({
 
             <div>
               <label className="block text-sm font-semibold mb-1">Categoría</label>
-              <div className="px-4 py-2.5 rounded-xl border-2 border-border bg-muted/50 text-foreground font-semibold flex items-center justify-between">
-                <span>{displayCategory}</span>
+              <div className="px-4 py-2.5 rounded-xl border-2 border-border bg-muted/50 font-semibold flex items-center justify-between">
+                <span className={displayCategory === 'Esperando selección...' ? 'text-muted-foreground font-normal' : 'text-foreground'}>
+                  {displayCategory}
+                </span>
                 {isAliado && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Asignada</span>}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">
@@ -113,6 +118,7 @@ export function EventForm({
               <input
                 required
                 type="date"
+                min={minDate}
                 value={form.event_date}
                 onChange={e => setForm({ ...form, event_date: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"

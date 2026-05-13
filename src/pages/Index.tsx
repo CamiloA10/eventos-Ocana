@@ -27,10 +27,10 @@ export default function Index() {
   const [showReligiousSubs, setShowReligiousSubs] = useState(false);
 
   const categories = [
-    { label: 'Cultural', tag: 'Arte & Música', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', count: '12 eventos' },
-    { label: 'Deportivo', tag: 'Acción & Salud', img: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', count: '8 eventos' },
-    { label: 'Turístico', tag: 'Rutas & Aventura', img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', count: '5 eventos' },
-    { label: 'Religioso', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: '4 eventos' },
+    { label: 'Cultural', tag: 'Arte & Música', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', count: `${events.filter(e => e.category === 'Cultural').length} eventos` },
+    { label: 'Deportivo', tag: 'Acción & Salud', img: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', count: `${events.filter(e => e.category === 'Deportivo').length} eventos` },
+    { label: 'Turístico', tag: 'Rutas & Aventura', img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', count: `${events.filter(e => e.category === 'Turístico').length} eventos` },
+    { label: 'Religioso', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: `${events.filter(e => e.category === 'Religioso').length} eventos` },
   ];
 
   return (
@@ -156,8 +156,8 @@ export default function Index() {
             ) : (
               <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {[
-                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: '3 eventos' },
-                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/iglesia_evangelica.png', count: '1 evento' },
+                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: `${events.filter(e => e.sub_category === 'Iglesia Católica').length} eventos` },
+                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/iglesia_evangelica.png', count: `${events.filter(e => e.sub_category === 'Iglesia Evangélica').length} eventos` },
                 ].map((sub) => (
                   <Link
                     key={sub.label}
