@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,7 +111,19 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'event' | 'aliado' } | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && (!user || (!isAdmin && !isAliado))) {
+      navigate('/login');
+    }
+  }, [user, isAdmin, isAliado, loading, navigate]);
+
+  useEffect(() => {
+    if (isAliado && activeTab === 'aliados') {
+      setActiveTab('events');
+    }
+  }, [isAliado, activeTab]);
+
+  if (loading || !user || (!isAdmin && !isAliado)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
@@ -119,14 +131,6 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || (!isAdmin && !isAliado)) {
-    navigate('/login');
-    return null;
-  }
-
-  if (isAliado && activeTab === 'aliados') {
-    setActiveTab('events');
-  }
 
   const resetForms = () => {
     setEventFormData(emptyEventForm);

@@ -17,21 +17,33 @@ export function useAuth() {
 
       if (session?.user) {
         try {
-          // Check for admin role
+          // 1. Check for admin role
           const { data: roleData } = await supabase.rpc('has_role', {
             _user_id: session.user.id,
             _role: 'admin',
           });
           setIsAdmin(!!roleData);
 
-          // Check for aliado association in metadata or a specific claim
-          const aliadoId = session.user.user_metadata?.aliado_id;
-          if (aliadoId) {
+          // 2. Check for aliado association - query the table directly for robustness
+          const { data: aliadoData, error: aliadoError } = await supabase
+            .from('aliados')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (aliadoData) {
             setIsAliado(true);
-            setUserAliadoId(aliadoId);
+            setUserAliadoId(aliadoData.id);
           } else {
-            setIsAliado(false);
-            setUserAliadoId(null);
+            // Fallback to metadata for backward compatibility during transition
+            const metadataId = session.user.user_metadata?.aliado_id;
+            if (metadataId) {
+              setIsAliado(true);
+              setUserAliadoId(metadataId);
+            } else {
+              setIsAliado(false);
+              setUserAliadoId(null);
+            }
           }
         } catch (err) {
           console.error("Error fetching role:", err);
