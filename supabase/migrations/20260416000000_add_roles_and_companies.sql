@@ -57,9 +57,9 @@ CREATE POLICY "Anyone can view companies" ON public.companies
   USING (true);
 
 -- Policies for saved_events
-CREATE POLICY "Users can view their own saved events" ON public.saved_events
+CREATE POLICY "Anyone can view saved events" ON public.saved_events
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (true);
 
 CREATE POLICY "Users can insert their own saved events" ON public.saved_events
   FOR INSERT

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +10,7 @@ const CATEGORIES = ['Todos', 'Cultural', 'Deportivo', 'Turístico', 'Religioso']
 const RELIGIOUS_SUB_CATEGORIES = ['Todas', 'Iglesia Católica', 'Iglesia Evangélica'];
 
 export default function EventsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initCat = searchParams.get('categoria') ?? 'Todos';
   const initSubCat = searchParams.get('subcategoria') ?? 'Todas';
   const initSearch = searchParams.get('search') ?? '';
@@ -18,6 +18,12 @@ export default function EventsPage() {
   const [category, setCategory] = useState(initCat);
   const [subCategory, setSubCategory] = useState(initSubCat);
   const [search, setSearch] = useState(initSearch);
+
+  useEffect(() => {
+    setCategory(searchParams.get('categoria') ?? 'Todos');
+    setSubCategory(searchParams.get('subcategoria') ?? 'Todas');
+    setSearch(searchParams.get('search') ?? '');
+  }, [searchParams]);
 
   const { user } = useAuth();
   

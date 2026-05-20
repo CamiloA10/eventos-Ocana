@@ -38,57 +38,6 @@ export type EventStats = {
   attendance: number;
 };
 
-const STATIC_RELIGIOUS_EVENTS: Event[] = [
-  {
-    id: 'static-1',
-    title: "Misa en Honor a la Virgen de la Torcoroma",
-    description: "Solemne eucaristía en el Santuario de la Aparición. Una tradición de fe que une a todos los ocañeros en honor a nuestra patrona.",
-    event_date: "2026-08-16",
-    location: "Santuario de la Torcoroma",
-    category: "Religioso",
-    sub_category: "Iglesia Católica",
-    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png",
-    featured: true,
-    aliado_id: ""
-  },
-  {
-    id: 'static-2',
-    title: "Procesión de Viernes Santo",
-    description: "Recorrido por las principales calles del centro histórico de Ocaña. Una de las manifestaciones religiosas más antiguas y respetadas de la región.",
-    event_date: "2026-04-03",
-    location: "Centro Histórico",
-    category: "Religioso",
-    sub_category: "Iglesia Católica",
-    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/procesion_semana_santa.png",
-    featured: false,
-    aliado_id: ""
-  },
-  {
-    id: 'static-3',
-    title: "Fiesta de San Jorge Patrono",
-    description: "Celebración del día de San Jorge, patrono de nuestra ciudad. Misa solemne y actos culturales en la Catedral de Santa Ana.",
-    event_date: "2026-04-23",
-    location: "Catedral de Santa Ana",
-    category: "Religioso",
-    sub_category: "Iglesia Católica",
-    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/misa_catedral.png",
-    featured: true,
-    aliado_id: ""
-  },
-  {
-    id: 'static-4',
-    title: "Congreso de Jóvenes: Pasión por Su Reino",
-    description: "Un espacio de alabanza, adoración y formación para la juventud cristiana de la región. Conferencistas invitados y música en vivo.",
-    event_date: "2026-06-15",
-    location: "Auditorio Central Ocaña",
-    category: "Religioso",
-    sub_category: "Iglesia Evangélica",
-    image_url: "https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/iglesia_evangelica.png",
-    featured: false,
-    aliado_id: ""
-  }
-];
-
 /**
  * Normalizes event data, handling legacy categories and ensuring 
  * consistent structure.
@@ -144,29 +93,6 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
 
   let dbEvents = (data || []).map(normalizeEvent);
 
-  // Merge with static data if relevant
-  const shouldIncludeStatic = !category || category === 'Todos' || category === 'Religioso';
-
-  if (shouldIncludeStatic) {
-    const uniqueStatic = STATIC_RELIGIOUS_EVENTS.filter(staticEvent => {
-      // Avoid duplicates by title
-      const alreadyInDb = dbEvents.some(dbEvent =>
-        dbEvent.title.toLowerCase().trim() === staticEvent.title.toLowerCase().trim()
-      );
-      if (alreadyInDb) return false;
-
-      // Filter static events manually
-      if (!category || category === 'Todos') return true;
-      if (category === 'Religioso') {
-        if (!subCategory || subCategory === 'Todas') return true;
-        return staticEvent.sub_category === subCategory;
-      }
-      return false;
-    });
-
-    dbEvents = [...dbEvents, ...uniqueStatic];
-  }
-
   return dbEvents.sort((a, b) => a.event_date.localeCompare(b.event_date));
 }
 
@@ -174,10 +100,16 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
  * Fetches global event and aliado statistics.
  */
 export async function fetchEventStats(): Promise<EventStats> {
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const startOfMonth = `${year}-${pad(month + 1)}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const endOfMonth = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
   
   const [eventsRes, aliadosRes, attendanceRes] = await Promise.all([
-    supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today),
+    supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', startOfMonth).lte('event_date', endOfMonth),
     supabase.from('aliados').select('*', { count: 'exact', head: true }),
     supabase.from('saved_events').select('*', { count: 'exact', head: true })
   ]);
@@ -185,7 +117,7 @@ export async function fetchEventStats(): Promise<EventStats> {
   return {
     events: eventsRes.count ?? 0,
     aliados: aliadosRes.count ?? 0,
-    attendance: (attendanceRes.count ?? 0) + 150 // Including baseline for proof-of-concept
+    attendance: attendanceRes.count ?? 0
   };
 }
 

@@ -10,7 +10,7 @@ import Navbar from '@/components/Navbar';
 export default function Index() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: stats = { events: 0, companies: 0, attendance: 0 } } = useStats();
+  const { data: stats = { events: 0, aliados: 0, attendance: 0 } } = useStats();
   
   // Use the Unified Event Directory for the homepage preview
   const { data: events = [] } = useEventDirectory({ category: 'Todos' });
@@ -82,13 +82,13 @@ export default function Index() {
                 </div>
                 <div className="w-px h-12 bg-slate-200 hidden sm:block" />
                 <div className="flex flex-col">
-                  <span className="text-4xl font-black text-blue-600 tracking-tighter">{stats.companies}+</span>
+                  <span className="text-4xl font-black text-blue-600 tracking-tighter">{stats.aliados}+</span>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Aliados / Empresas</span>
                 </div>
                 <div className="w-px h-12 bg-slate-200 hidden sm:block" />
                 <div className="flex flex-col">
                   <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.attendance}+</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Asistencias</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Eventos compartidos</span>
                 </div>
               </div>
             </div>

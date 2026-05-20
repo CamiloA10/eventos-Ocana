@@ -90,27 +90,30 @@ export function EventForm({
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-semibold mb-1">Categoría</label>
-              <div className="px-4 py-2.5 rounded-xl border-2 border-border bg-muted/50 font-semibold flex items-center justify-between">
-                <span className={displayCategory === 'Esperando selección...' ? 'text-muted-foreground font-normal' : 'text-foreground'}>
-                  {displayCategory}
-                </span>
-                {isAliado && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Asignada</span>}
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {isAliado ? 'Tu categoría es asignada por la administración.' : 'La categoría se hereda del aliado seleccionado.'}
-              </p>
-            </div>
-
-            {displayCategory === 'Religioso' && (
-              <div className="animate-in fade-in slide-in-from-top-1 duration-300">
-                <label className="block text-sm font-semibold mb-1 text-primary">Denominación</label>
-                <div className="px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold">
-                  {isAliado ? form.sub_category : (currentAliado?.sub_category || form.sub_category)}
+            {/* Categoría oculta */}
+            <div className="hidden">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Categoría</label>
+                <div className="px-4 py-2.5 rounded-xl border-2 border-border bg-muted/50 font-semibold flex items-center justify-between">
+                  <span className={displayCategory === 'Esperando selección...' ? 'text-muted-foreground font-normal' : 'text-foreground'}>
+                    {displayCategory}
+                  </span>
+                  {isAliado && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Asignada</span>}
                 </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {isAliado ? 'Tu categoría es asignada por la administración.' : 'La categoría se hereda del aliado seleccionado.'}
+                </p>
               </div>
-            )}
+
+              {displayCategory === 'Religioso' && (
+                <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+                  <label className="block text-sm font-semibold mb-1 text-primary">Denominación</label>
+                  <div className="px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold">
+                    {isAliado ? form.sub_category : (currentAliado?.sub_category || form.sub_category)}
+                  </div>
+                </div>
+              )}
+            </div>
 
 
             <div>
