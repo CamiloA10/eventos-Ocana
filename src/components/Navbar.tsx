@@ -118,7 +118,7 @@ export default function Navbar() {
             </button>
           ) : (
             <div className="flex flex-col gap-4">
-              <Link to="/login" className="text-center py-4 font-bold text-slate-600" onClick={() => setOpen(false)}>Login</Link>
+              <Link to="/login" className="text-center py-4 font-bold text-slate-600" onClick={() => setOpen(false)}>Ingresar</Link>
               <Link to="/register" className="bg-blue-600 text-white py-4 rounded-xl text-center font-bold" onClick={() => setOpen(false)}>Crear Cuenta</Link>
             </div>
           )}

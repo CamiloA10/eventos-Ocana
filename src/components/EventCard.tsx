@@ -146,15 +146,15 @@ export default function EventCard({ event }: Props) {
       {/* Details Modal */}
       {showDetails && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-500">
-          <div className="bg-white rounded-[3.5rem] w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col md:flex-row animate-in zoom-in-95 duration-500 relative">
+          <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col md:flex-row animate-in zoom-in-95 duration-500 relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowDetails(false); }}
-              className="absolute top-8 right-8 z-10 p-5 bg-black/10 hover:bg-black/20 backdrop-blur-md rounded-full transition-all transform active:scale-95"
+              className="absolute top-4 right-4 md:top-6 md:right-6 z-10 p-3 md:p-4 bg-black/10 hover:bg-black/20 backdrop-blur-md rounded-full transition-all transform active:scale-95"
             >
-              <X className="w-6 h-6 text-white" />
+              <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </button>
 
-            <div className="md:w-[45%] relative bg-slate-100 min-h-[350px] md:min-h-full">
+            <div className="md:w-[45%] relative bg-slate-100 min-h-[250px] h-[250px] md:h-auto md:min-h-full shrink-0">
               <img
                 src={modalImage}
                 className="w-full h-full object-cover"
@@ -162,29 +162,29 @@ export default function EventCard({ event }: Props) {
                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = Asset.getPlaceholder('event'); }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-12 left-12 right-12">
-                <div className={`w-fit px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border mb-6 backdrop-blur-md shadow-2xl ${CATEGORY_COLORS[event.category]}`}>
+              <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-10 md:right-10">
+                <div className={`w-fit px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border mb-4 md:mb-6 backdrop-blur-md shadow-2xl ${CATEGORY_COLORS[event.category]}`}>
                   {event.category}
                 </div>
-                <h2 className="text-5xl font-black text-white tracking-tighter leading-[0.85] uppercase italic">{event.title}</h2>
+                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-[0.85] uppercase italic">{event.title}</h2>
               </div>
             </div>
 
-            <div className="md:w-[55%] p-16 overflow-y-auto custom-scrollbar bg-white flex flex-col">
-              <div className="space-y-12 flex-grow">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="flex items-center gap-5 p-6 rounded-3xl bg-slate-50 border border-slate-100">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-inner">
-                      <CalendarDays className="w-7 h-7" />
+            <div className="md:w-[55%] p-6 md:p-10 overflow-y-auto custom-scrollbar bg-white flex flex-col">
+              <div className="space-y-6 md:space-y-8 flex-grow">
+                <div className="grid grid-cols-2 gap-4 md:gap-6">
+                  <div className="flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-2xl md:rounded-3xl bg-slate-50 border border-slate-100">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-inner shrink-0">
+                      <CalendarDays className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Fecha</p>
                       <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{formattedDate}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-5 p-6 rounded-3xl bg-slate-50 border border-slate-100">
-                    <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-inner">
-                      <Clock className="w-7 h-7" />
+                  <div className="flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-2xl md:rounded-3xl bg-slate-50 border border-slate-100">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-inner shrink-0">
+                      <Clock className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Hora</p>
@@ -197,10 +197,10 @@ export default function EventCard({ event }: Props) {
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location + ', Ocaña, Norte de Santander')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-5 p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-600 hover:shadow-xl hover:shadow-blue-100 transition-all group/location cursor-pointer"
+                  className="flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-2xl md:rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-600 hover:shadow-xl hover:shadow-blue-100 transition-all group/location cursor-pointer"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center text-green-600 shadow-inner group-hover/location:bg-green-600 group-hover/location:text-white transition-colors">
-                    <MapPin className="w-7 h-7" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-green-100 flex items-center justify-center text-green-600 shadow-inner group-hover/location:bg-green-600 group-hover/location:text-white transition-colors shrink-0">
+                    <MapPin className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Ubicación</p>
@@ -214,22 +214,22 @@ export default function EventCard({ event }: Props) {
                 </a>
 
                 <div>
-                  <h4 className="text-[10px] uppercase font-black text-blue-600 tracking-[0.3em] mb-6 flex items-center gap-3">
+                  <h4 className="text-[10px] uppercase font-black text-blue-600 tracking-[0.3em] mb-3 md:mb-4 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" />
                     Detalles del Evento
                   </h4>
-                  <p className="text-xl text-slate-600 leading-relaxed font-medium">
+                  <p className="text-base md:text-lg text-slate-600 leading-relaxed font-medium">
                     {event.description || "Descubre una experiencia única en el corazón de Ocaña. No te pierdas este evento especial diseñado para ti."}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-12 pt-12 border-t border-slate-100 flex flex-col gap-8">
+              <div className="mt-6 pt-6 md:mt-8 md:pt-8 border-t border-slate-100 flex flex-col gap-5 md:gap-6 shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-4">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <div className="flex -space-x-2 md:-space-x-3">
                       {[1, 2, 3, 4].map(i => (
-                        <img key={i} src={Asset.getImageUrl(null, 'avatar')} className="w-12 h-12 rounded-full border-4 border-white bg-slate-100" />
+                        <img key={i} src={Asset.getImageUrl(null, 'avatar')} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-[3px] border-white bg-slate-100" />
                       ))}
                     </div>
                     <p className="text-xs font-bold text-slate-500">
@@ -238,16 +238,16 @@ export default function EventCard({ event }: Props) {
                   </div>
                 </div>
 
-                <div className="flex gap-6">
+                <div className="flex gap-4 md:gap-6">
                   <button
                     onClick={onToggleSave}
                     disabled={isPending}
-                    className={`flex-grow py-6 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${saved ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
+                    className={`flex-grow py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${saved ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
                       } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {saved ? (
                       <>
-                        <Check className="w-5 h-5 stroke-[3px]" />
+                        <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3px]" />
                         En Favoritos
                       </>
                     ) : (
@@ -259,9 +259,9 @@ export default function EventCard({ event }: Props) {
                   </button>
                   <button
                     onClick={onShare}
-                    className="p-6 bg-slate-50 rounded-[1.5rem] hover:bg-slate-100 text-slate-400 transition-all hover:text-blue-600 border border-slate-100 shadow-sm"
+                    className="p-4 md:p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 text-slate-400 transition-all hover:text-blue-600 border border-slate-100 shadow-sm shrink-0"
                   >
-                    <Share2 className="w-6 h-6" />
+                    <Share2 className="w-5 h-5 md:w-6 md:h-6" />
                   </button>
                 </div>
               </div>
