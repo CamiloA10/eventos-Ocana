@@ -26,12 +26,11 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 rounded-lg p-1.5 transition-transform group-hover:scale-110">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900">
-            ¿Hey pa' <span className="text-blue-600">dónde vamos?</span>
-          </span>
+          <img 
+            src={`${import.meta.env.BASE_URL}assets/logo.png`} 
+            alt="¿Hey pa' dónde vamos?" 
+            className="h-14 md:h-16 w-auto transition-transform group-hover:scale-105"
+          />
         </Link>
 
         {/* Desktop Navigation */}

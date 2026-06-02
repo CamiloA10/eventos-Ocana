@@ -52,10 +52,11 @@ export function useEventActions() {
   };
 
   const shareEvent = async (event: Event) => {
+    const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, ''); // Remove trailing slash if any
     const shareData = {
       title: event.title,
       text: event.description,
-      url: window.location.origin + `/eventos?id=${event.id}`,
+      url: `${window.location.origin}${baseUrl}/eventos?id=${event.id}`,
     };
 
     try {

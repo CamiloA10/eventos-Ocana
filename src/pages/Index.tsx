@@ -6,6 +6,7 @@ import { useStats } from '@/hooks/useEvents';
 import { useEventDirectory } from '@/hooks/useEventDirectory';
 import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
+import { Asset } from '@/lib/assets';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -27,10 +28,10 @@ export default function Index() {
   const [showReligiousSubs, setShowReligiousSubs] = useState(false);
 
   const categories = [
-    { label: 'Cultural', tag: 'Arte & Música', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80', count: `${events.filter(e => e.category === 'Cultural').length} eventos` },
-    { label: 'Deportivo', tag: 'Acción & Salud', img: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', count: `${events.filter(e => e.category === 'Deportivo').length} eventos` },
-    { label: 'Turístico', tag: 'Rutas & Aventura', img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80', count: `${events.filter(e => e.category === 'Turístico').length} eventos` },
-    { label: 'Religioso', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: `${events.filter(e => e.category === 'Religioso').length} eventos` },
+    { label: 'Cultural', tag: 'Arte & Música', img: Asset.getCategoryImage('Cultural'), count: `${events.filter(e => e.category === 'Cultural').length} eventos` },
+    { label: 'Deportivo', tag: 'Acción & Salud', img: Asset.getCategoryImage('Deportivo'), count: `${events.filter(e => e.category === 'Deportivo').length} eventos` },
+    { label: 'Turístico', tag: 'Rutas & Aventura', img: Asset.getCategoryImage('Turístico'), count: `${events.filter(e => e.category === 'Turístico').length} eventos` },
+    { label: 'Religioso', tag: 'Fe & Tradición', img: Asset.getCategoryImage('Religioso'), count: `${events.filter(e => e.category === 'Religioso').length} eventos` },
   ];
 
   return (
@@ -57,19 +58,19 @@ export default function Index() {
               </p>
 
               <form onSubmit={handleSearch} className="relative max-w-2xl group mb-10">
-                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                  <Search className="w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                <div className="absolute inset-y-0 left-4 md:left-5 flex items-center pointer-events-none">
+                  <Search className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                 </div>
                 <input
                   type="text"
-                  placeholder="¿Buscas algún evento en especial?"
+                  placeholder="Buscar eventos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-14 pr-32 py-5 bg-white border-2 border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 group-hover:border-blue-100 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-lg font-medium"
+                  className="w-full pl-12 md:pl-14 pr-[80px] md:pr-32 py-4 md:py-5 bg-white border-2 border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 group-hover:border-blue-100 focus:border-blue-600 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm md:text-lg font-medium"
                 />
                 <button
                   type="submit"
-                  className="absolute right-3 inset-y-3 bg-blue-600 text-white px-8 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+                  className="absolute right-2 inset-y-2 md:right-3 md:inset-y-3 bg-blue-600 text-white px-4 md:px-8 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest hover:bg-blue-700 transition-all shadow-lg active:scale-95"
                 >
                   Buscar
                 </button>
@@ -88,7 +89,7 @@ export default function Index() {
                 <div className="w-px h-12 bg-slate-200 hidden sm:block" />
                 <div className="flex flex-col">
                   <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.attendance}+</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Eventos compartidos</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Eventos guardados</span>
                 </div>
               </div>
             </div>
@@ -156,8 +157,8 @@ export default function Index() {
             ) : (
               <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {[
-                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/santuario_torcoroma.png', count: `${events.filter(e => e.sub_category === 'Iglesia Católica').length} eventos` },
-                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: 'https://laupljykvfcggawtpvnj.supabase.co/storage/v1/object/public/event-images/iglesia_evangelica.png', count: `${events.filter(e => e.sub_category === 'Iglesia Evangélica').length} eventos` },
+                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: Asset.getCategoryImage('Iglesia Católica'), count: `${events.filter(e => e.sub_category === 'Iglesia Católica').length} eventos` },
+                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: Asset.getCategoryImage('Iglesia Evangélica'), count: `${events.filter(e => e.sub_category === 'Iglesia Evangélica').length} eventos` },
                 ].map((sub) => (
                   <Link
                     key={sub.label}
@@ -222,12 +223,11 @@ export default function Index() {
           <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 mb-20">
             <div className="lg:col-span-5 space-y-10">
               <Link to="/" className="flex items-center gap-3 group w-fit">
-                <div className="bg-blue-600 rounded-xl p-2.5 transition-transform group-hover:scale-110 shadow-lg shadow-blue-900/40">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-3xl font-black tracking-tighter text-white uppercase italic">
-                  ¿Hey pa' <span className="text-blue-500">donde vamos?</span>
-                </span>
+                <img 
+                  src={`${import.meta.env.BASE_URL}assets/logo.png`} 
+                  alt="¿Hey pa' dónde vamos?" 
+                  className="h-20 md:h-54 w-auto transition-transform group-hover:scale-105 brightness-0 invert"
+                />
               </Link>
 
               <p className="text-lg text-slate-400 leading-relaxed max-w-sm font-medium tracking-tight">

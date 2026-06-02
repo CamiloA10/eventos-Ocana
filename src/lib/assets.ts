@@ -64,6 +64,23 @@ export const Asset = {
   },
 
   /**
+   * Get an image for a specific category
+   */
+  getCategoryImage(categoryName: string): string {
+    const base = import.meta.env.BASE_URL;
+    const CATEGORY_IMAGES: Record<string, string> = {
+      'Cultural': `${base}categories/cultural.png`,
+      'Deportivo': `${base}categories/deportivo.jpg`,
+      'Turístico': `${base}categories/turistico.jpg`,
+      'Religioso': `${base}categories/religioso.jpg`,
+      'Iglesia Católica': `${base}categories/iglesia-catolica.jpg`,
+      'Iglesia Evangélica': `${base}categories/iglesia-evangelica.jpg`,
+    };
+
+    return CATEGORY_IMAGES[categoryName] || this.getPlaceholder('event');
+  },
+
+  /**
    * Handle image upload logic (abstraction of Supabase Storage)
    */
   async uploadEventImage(file: File): Promise<string> {

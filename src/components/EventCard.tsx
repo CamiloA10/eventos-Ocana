@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CalendarDays, MapPin, Star, ArrowRight, ShieldCheck, Clock, Check, Share2, Heart, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { type Event } from '@/hooks/useEvents';
 import { useEventActions } from '@/hooks/useEventActions';
 import { Asset } from '@/lib/assets';
+import { ImageWithLoader } from './ui/ImageWithLoader';
 
 const CATEGORY_COLORS: Record<string, string> = {
   Cultural: 'bg-blue-50 text-blue-700 border-blue-100',
@@ -15,10 +16,17 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 interface Props {
   event: Event;
+  initialOpen?: boolean;
 }
 
-export default function EventCard({ event }: Props) {
-  const [showDetails, setShowDetails] = useState(false);
+export default function EventCard({ event, initialOpen = false }: Props) {
+  const [showDetails, setShowDetails] = useState(initialOpen);
+
+  useEffect(() => {
+    if (initialOpen) {
+      setShowDetails(true);
+    }
+  }, [initialOpen]);
   const { toggleSave, shareEvent, isSaved, isPending } = useEventActions();
 
   const saved = isSaved(event.id);
@@ -55,11 +63,11 @@ export default function EventCard({ event }: Props) {
         className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.1)] hover:border-blue-100 transition-all duration-500 flex flex-col h-full transform hover:-translate-y-2 cursor-pointer"
       >
         <div className="relative h-64 overflow-hidden">
-          <img
+          <ImageWithLoader
             src={cardImage}
             alt={event.title}
             className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = Asset.getPlaceholder('event'); }}
+            fallbackSrc={Asset.getPlaceholder('event')}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
@@ -145,8 +153,8 @@ export default function EventCard({ event }: Props) {
 
       {/* Details Modal */}
       {showDetails && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-500">
-          <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col md:flex-row animate-in zoom-in-95 duration-500 relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col md:flex-row animate-in zoom-in-95 duration-200 relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowDetails(false); }}
               className="absolute top-4 right-4 md:top-6 md:right-6 z-10 p-3 md:p-4 bg-black/10 hover:bg-black/20 backdrop-blur-md rounded-full transition-all transform active:scale-95"
@@ -155,11 +163,11 @@ export default function EventCard({ event }: Props) {
             </button>
 
             <div className="md:w-[45%] relative bg-slate-100 min-h-[250px] h-[250px] md:h-auto md:min-h-full shrink-0">
-              <img
+              <ImageWithLoader
                 src={modalImage}
                 className="w-full h-full object-cover"
                 alt={event.title}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = Asset.getPlaceholder('event'); }}
+                fallbackSrc={Asset.getPlaceholder('event')}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-10 md:right-10">
