@@ -4,7 +4,8 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useEvents, useAliados, useAdminStats, type Event, type Aliado } from '@/hooks/useEvents';
-import { Plus, Pencil, Trash2, CalendarDays, MapPin, Building2, Search, Users, Activity, CheckCircle2, Bookmark, Building } from 'lucide-react';
+import { Plus, Pencil, Trash2, CalendarDays, MapPin, Building2, Search, Users, Activity, CheckCircle2, Bookmark, Building, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { useEventRating } from '@/hooks/useRatings';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,71 @@ import { createAliadoWithAuth, updateAliadoProfile, deleteAliadoComplete, type A
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { EventForm } from '@/components/admin/EventForm';
 import { AliadoForm } from '@/components/admin/AliadoForm';
+import { useEventAttendance } from '@/hooks/useAttendance';
+
+function EventAdminStats({ eventId }: { eventId: string }) {
+  const { data } = useEventAttendance(eventId);
+  return (
+    <span className="flex items-center gap-1 text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full text-xs" title="Asistentes Confirmados">
+      <Users className="w-3.5 h-3.5" />
+      {data?.count || 0} Confirmados
+    </span>
+  );
+}
+
+function AdminEventSummaryCard({ event, aliados, todayStr, onEdit, onDelete }: any) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: ratingData } = useEventRating(event.id);
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-4 card-shadow hover:border-primary/30 transition-all cursor-pointer" onClick={() => setExpanded(!expanded)}>
+      <div className="flex items-center gap-4">
+        {event.image_url && <img src={event.image_url} alt={event.title} className="w-16 h-16 rounded-xl object-cover hidden sm:block" />}
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
+          <div className="flex gap-4 mt-1 text-sm text-muted-foreground flex-wrap items-center">
+            <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />{format(parseISO(event.event_date), 'd MMM yyyy', { locale: es })}</span>
+            <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{event.location}</span>
+            <span className="px-2 py-0.5 bg-muted rounded-full text-xs">{event.category}</span>
+            {event.event_date < todayStr && (
+              <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse">Finalizado</span>
+            )}
+            {aliados.find((c: any) => c.id === event.aliado_id) && (
+              <span className="flex items-center gap-1 text-primary">
+                <Building2 className="w-3.5 h-3.5" />
+                {aliados.find((c: any) => c.id === event.aliado_id)?.name}
+              </span>
+            )}
+            <EventAdminStats eventId={event.id} />
+          </div>
+        </div>
+        <div className="flex gap-2 items-center" onClick={(e) => { e.stopPropagation(); }}>
+          <button onClick={onEdit} className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"><Pencil className="w-4 h-4" /></button>
+          <button onClick={onDelete} className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all"><Trash2 className="w-4 h-4" /></button>
+          <div className="p-2 ml-1 pointer-events-none">
+            {expanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+          </div>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-2 pt-4 border-t border-border flex flex-col gap-4 text-sm" onClick={(e) => e.stopPropagation()}>
+          {event.description && <p className="text-muted-foreground">{event.description}</p>}
+
+          <div className="flex items-center gap-2 bg-yellow-50 text-yellow-800 p-3 rounded-xl border border-yellow-100 w-fit">
+            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+            <span className="font-bold">Calificación:</span>
+            <span>
+              {ratingData && ratingData.totalRatings > 0
+                ? `${ratingData.averageRating.toFixed(1)} de ${ratingData.totalRatings} reseñas`
+                : 'Sin calificaciones aún'}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico', 'Religioso'] as const;
 
@@ -112,8 +178,12 @@ export default function AdminPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'event' | 'aliado' } | null>(null);
 
   useEffect(() => {
-    if (!loading && (!user || (!isAdmin && !isAliado))) {
-      navigate('/login');
+    if (!loading) {
+      if (!user) {
+        navigate('/login');
+      } else if (!isAdmin && !isAliado) {
+        navigate('/eventos');
+      }
     }
   }, [user, isAdmin, isAliado, loading, navigate]);
 
@@ -353,36 +423,20 @@ export default function AdminPage() {
 
             <div className="space-y-3">
               {renderedEvents.map(event => (
-                  <div key={event.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 card-shadow hover:border-primary/30 transition-all">
-                    {event.image_url && <img src={event.image_url} alt={event.title} className="w-16 h-16 rounded-xl object-cover hidden sm:block" />}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
-                      <div className="flex gap-4 mt-1 text-sm text-muted-foreground flex-wrap items-center">
-                        <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />{format(parseISO(event.event_date), 'd MMM yyyy', { locale: es })}</span>
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{event.location}</span>
-                        <span className="px-2 py-0.5 bg-muted rounded-full text-xs">{event.category}</span>
-                        {event.event_date < todayStr && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse">Finalizado</span>
-                        )}
-                        {aliados.find(c => c.id === event.aliado_id) && (
-                          <span className="flex items-center gap-1 text-primary">
-                            <Building2 className="w-3.5 h-3.5" />
-                            {aliados.find(c => c.id === event.aliado_id)?.name}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { setEditId(event.id); setEventFormData(event as any); setShowEventForm(true); }} className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"><Pencil className="w-4 h-4" /></button>
-                      <button onClick={() => setConfirmDelete({ id: event.id, type: 'event' })} className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  </div>
-                ))}
+                <AdminEventSummaryCard
+                  key={event.id}
+                  event={event}
+                  aliados={aliados}
+                  todayStr={todayStr}
+                  onEdit={() => { setEditId(event.id); setEventFormData(event as any); setShowEventForm(true); }}
+                  onDelete={() => setConfirmDelete({ id: event.id, type: 'event' })}
+                />
+              ))}
             </div>
           </>
         ) : activeTab === 'users' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div className="col-span-full flex items-center justify-between mb-2">
+            <div className="col-span-full flex items-center justify-between mb-2">
               <h2 className="font-display text-2xl font-bold text-foreground">Usuarios Registrados</h2>
             </div>
             {users.map(u => (
@@ -394,14 +448,14 @@ export default function AdminPage() {
               </div>
             ))}
             {users.length === 0 && (
-               <div className="col-span-full py-8 text-center text-muted-foreground bg-muted/20 rounded-2xl border border-border/50">
-                 No se encontraron usuarios.
-               </div>
+              <div className="col-span-full py-8 text-center text-muted-foreground bg-muted/20 rounded-2xl border border-border/50">
+                No se encontraron usuarios.
+              </div>
             )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div className="col-span-full flex items-center justify-between mb-2">
+            <div className="col-span-full flex items-center justify-between mb-2">
               <h2 className="font-display text-2xl font-bold text-foreground">Aliados</h2>
               <button
                 onClick={() => { resetForms(); setShowAliadoForm(true); }}
@@ -421,19 +475,19 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <button 
-                    onClick={() => { 
-                      setEditId(aliado.id); 
-                      setAliadoFormData({ 
-                        name: aliado.name, 
-                        description: aliado.description || '', 
+                  <button
+                    onClick={() => {
+                      setEditId(aliado.id);
+                      setAliadoFormData({
+                        name: aliado.name,
+                        description: aliado.description || '',
                         category: aliado.category || '',
                         sub_category: aliado.sub_category || '',
                         email: aliado.owner_email || '',
                         password: ''
-                      }); 
-                      setShowAliadoForm(true); 
-                    }} 
+                      });
+                      setShowAliadoForm(true);
+                    }}
                     className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"
                   >
                     <Pencil className="w-4 h-4" />

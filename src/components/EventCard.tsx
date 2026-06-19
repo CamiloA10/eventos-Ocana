@@ -4,6 +4,9 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { type Event } from '@/hooks/useEvents';
 import { useEventActions } from '@/hooks/useEventActions';
+import { useEventAttendance, useToggleAttendance } from '@/hooks/useAttendance';
+import { useEventRating, useSubmitRating } from '@/hooks/useRatings';
+import { useAuth } from '@/hooks/useAuth';
 import { Asset } from '@/lib/assets';
 import { ImageWithLoader } from './ui/ImageWithLoader';
 
@@ -21,6 +24,7 @@ interface Props {
 
 export default function EventCard({ event, initialOpen = false }: Props) {
   const [showDetails, setShowDetails] = useState(initialOpen);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (initialOpen) {
@@ -28,9 +32,29 @@ export default function EventCard({ event, initialOpen = false }: Props) {
     }
   }, [initialOpen]);
   const { toggleSave, shareEvent, isSaved, isPending } = useEventActions();
+  const { data: attendanceData, isLoading: attendanceLoading } = useEventAttendance(event.id, user?.id);
+  const toggleAttendanceMutation = useToggleAttendance();
 
   const saved = isSaved(event.id);
-  const attendanceCount = event.attendance_count?.[0]?.count ?? 0;
+  const attendanceCount = (event.attendance_count?.[0]?.count ?? 0) + (attendanceData?.count || 0);
+  const isAttending = attendanceData?.isAttending || false;
+
+  const { data: ratingData } = useEventRating(event.id, user?.id);
+  const submitRatingMutation = useSubmitRating();
+
+  const handleRating = (rating: number) => {
+    if (user && isAttending) {
+      submitRatingMutation.mutate({ eventId: event.id, userId: user.id, rating, isUpdating: !!ratingData?.userRating });
+    }
+  };
+
+  const handleToggleAttendance = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (user) {
+      toggleAttendanceMutation.mutate({ eventId: event.id, userId: user.id, isAttending });
+    }
+  };
 
   const onToggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -91,8 +115,8 @@ export default function EventCard({ event, initialOpen = false }: Props) {
               onClick={onToggleSave}
               disabled={isPending}
               className={`p-3 rounded-2xl backdrop-blur-md shadow-lg transition-all duration-300 ${saved
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/80 text-slate-400 hover:text-blue-600 hover:bg-white'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/80 text-slate-400 hover:text-blue-600 hover:bg-white'
                 } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {saved ? <Check className="w-4 h-4 stroke-[3px]" /> : <Heart className="w-4 h-4" />}
@@ -118,7 +142,7 @@ export default function EventCard({ event, initialOpen = false }: Props) {
 
           <h3 className="text-2xl font-black mb-4 leading-[1.1] group-hover:text-blue-600 transition-colors uppercase tracking-tighter italic">{event.title}</h3>
 
-          <a 
+          <a
             href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location + ', Ocaña, Norte de Santander')}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -201,7 +225,7 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                   </div>
                 </div>
 
-                <a 
+                <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location + ', Ocaña, Norte de Santander')}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -232,6 +256,29 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                 </div>
               </div>
 
+              {isAttending && (
+                <div className="mt-6 md:mt-8 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex flex-col items-center justify-center text-center">
+                  <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-3">¿Cómo calificarías este evento?</p>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRating(star)}
+                        className={`p-2 transition-all ${(ratingData?.userRating || 0) >= star
+                            ? 'text-yellow-400 hover:text-yellow-500 hover:scale-110 drop-shadow-md'
+                            : 'text-slate-300 hover:text-yellow-400 hover:scale-110'
+                          }`}
+                      >
+                        <Star className={`w-8 h-8 ${(ratingData?.userRating || 0) >= star ? 'fill-yellow-400' : ''}`} />
+                      </button>
+                    ))}
+                  </div>
+                  {ratingData && ratingData.totalRatings > 0 && (
+                    <p className="text-xs font-bold text-slate-400 mt-3">Promedio: {ratingData.averageRating.toFixed(1)} de {ratingData.totalRatings} reseñas</p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-6 pt-6 md:mt-8 md:pt-8 border-t border-slate-100 flex flex-col gap-5 md:gap-6 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 md:gap-4">
@@ -246,31 +293,48 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                   </div>
                 </div>
 
-                <div className="flex gap-4 md:gap-6">
+                <div className="flex flex-col gap-4">
                   <button
-                    onClick={onToggleSave}
-                    disabled={isPending}
-                    className={`flex-grow py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${saved ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
+                    onClick={handleToggleAttendance}
+                    disabled={attendanceLoading || toggleAttendanceMutation.isPending || !user}
+                    className={`w-full py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${
+                      isAttending 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200 shadow-green-200/50' 
+                        : 'bg-slate-900 border-2 border-slate-900 text-white hover:bg-slate-800'
+                    } ${(!user || attendanceLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3px]" />
+                    {isAttending ? 'Asistencia Confirmada' : 'Confirmar Asistencia'}
+                  </button>
+                  <div className="flex gap-4 md:gap-6">
+                    <button
+                      onClick={onToggleSave}
+                      disabled={isPending}
+                      className={`flex-grow py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${
+                        saved 
+                          ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
                       } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {saved ? (
-                      <>
-                        <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3px]" />
-                        En Favoritos
-                      </>
-                    ) : (
-                      <>
-                        <Heart className="w-5 h-5" />
-                        Guardar Evento
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={onShare}
-                    className="p-4 md:p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 text-slate-400 transition-all hover:text-blue-600 border border-slate-100 shadow-sm shrink-0"
-                  >
-                    <Share2 className="w-5 h-5 md:w-6 md:h-6" />
-                  </button>
+                    >
+                      {saved ? (
+                        <>
+                          <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3px]" />
+                          En Favoritos
+                        </>
+                      ) : (
+                        <>
+                          <Heart className="w-4 h-4 md:w-5 md:h-5" />
+                          Guardar Evento
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={onShare}
+                      className="p-4 md:p-5 bg-slate-50 rounded-2xl hover:bg-slate-100 text-slate-400 transition-all hover:text-blue-600 border border-slate-100 shadow-sm shrink-0"
+                    >
+                      <Share2 className="w-5 h-5 md:w-6 md:h-6" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

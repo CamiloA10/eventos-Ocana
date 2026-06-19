@@ -35,8 +35,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="font-display text-2xl font-bold text-gradient">
-            ¿Hey pa' dónde vamos?
+          <Link to="/" className="flex justify-center mb-6">
+            <img src="/logo.png" alt="¿Hey pa' dónde vamos?" className="h-24 w-auto" />
           </Link>
           <h1 className="font-display text-3xl font-bold text-foreground mt-4 mb-2">Iniciar Sesión</h1>
           <p className="text-muted-foreground">Accede al panel de administración</p>

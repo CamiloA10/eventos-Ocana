@@ -78,6 +78,7 @@ export function useSaveEvent() {
       qc.invalidateQueries({ queryKey: ['saved-events', variables.userId] });
       qc.invalidateQueries({ queryKey: ['events'] });
       qc.invalidateQueries({ queryKey: ['featured-events'] });
+      qc.invalidateQueries({ queryKey: ['events-directory'] });
     },
   });
 }

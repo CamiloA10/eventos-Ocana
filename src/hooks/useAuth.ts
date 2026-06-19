@@ -71,7 +71,10 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  };
 
   return { user, session, isAdmin, isAliado, userAliadoId, loading, signOut };
 }

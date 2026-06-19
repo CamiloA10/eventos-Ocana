@@ -26,7 +26,7 @@ export default function EventsPage() {
   }, [searchParams]);
 
   const { user } = useAuth();
-  
+
   // Use the Deep Module for all event retrieval
   const { data: events = [], isLoading } = useEventDirectory({
     category: category === 'Favoritos' ? 'Todos' : category,
