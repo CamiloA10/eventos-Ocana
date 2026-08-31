@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Check, Image as ImageIcon, Instagram } from 'lucide-react';
 import { TikTokIcon, WhatsAppIcon } from '@/components/SocialIcons';
-import { type Event, type Aliado } from '@/lib/events';
+import { normalizeSportName, type Event, type Aliado } from '@/lib/events';
 
 const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico', 'Religioso'] as const;
 const RELIGIOUS_SUB_CATEGORIES = ['Iglesia Católica', 'Iglesia Evangélica'] as const;
@@ -129,7 +129,8 @@ export function EventForm({
                       : (form.sub_category ? 'Otros' : '')
                   }
                   onChange={e => {
-                    setForm({ ...form, sub_category: e.target.value });
+                    const nextValue = e.target.value;
+                    setForm({ ...form, sub_category: nextValue === 'Otros' ? 'Otros' : normalizeSportName(nextValue) });
                   }}
                   className="w-full px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold focus:outline-none focus:border-primary transition-colors"
                 >
@@ -145,7 +146,7 @@ export function EventForm({
                       required
                       placeholder="Escribe el nombre del deporte..."
                       value={form.sub_category === 'Otros' ? '' : form.sub_category}
-                      onChange={e => setForm({ ...form, sub_category: e.target.value === '' ? 'Otros' : e.target.value })}
+                      onChange={e => setForm({ ...form, sub_category: e.target.value === '' ? 'Otros' : normalizeSportName(e.target.value) })}
                       className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
                     />
                   </div>

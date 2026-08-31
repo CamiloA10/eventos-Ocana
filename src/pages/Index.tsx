@@ -8,6 +8,7 @@ import { useTopRatedEvents } from '@/hooks/useRatings';
 import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
 import { Asset } from '@/lib/assets';
+import { dedupeSportNames } from '@/lib/events';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -20,11 +21,11 @@ export default function Index() {
   const [selectedTopEvent, setSelectedTopEvent] = useState<any | null>(null);
   const [topEventKey, setTopEventKey] = useState(0);
 
-  const customSportsList = Array.from(new Set(
+  const customSportsList = dedupeSportNames(
     events
       .filter(e => e.category === 'Deportivo' && e.sub_category && !['Fútbol', 'Fútbol Sala', 'Baloncesto', 'Voleibol', 'Patinaje', 'Ciclismo', 'Atletismo', 'Otros'].includes(e.sub_category))
       .map(e => e.sub_category as string)
-  )).sort();
+  );
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();

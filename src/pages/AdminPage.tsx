@@ -20,6 +20,7 @@ import { EventForm } from '@/components/admin/EventForm';
 import { AliadoForm } from '@/components/admin/AliadoForm';
 import { useEventAttendance } from '@/hooks/useAttendance';
 import EventCard from '@/components/EventCard';
+import { normalizeSportName } from '@/lib/events';
 
 function EventAdminStats({ eventId }: { eventId: string }) {
   const { data } = useEventAttendance(eventId);
@@ -250,7 +251,7 @@ export default function AdminPage() {
         category: finalCategory,
         sub_category: finalCategory === 'Religioso'
           ? (currentAliado?.category === 'Religioso' ? currentAliado.sub_category : payload.sub_category)
-          : (finalCategory === 'Deportivo' ? payload.sub_category : null),
+          : (finalCategory === 'Deportivo' ? normalizeSportName(payload.sub_category) : null),
         image_url: imageUrl || null,
         event_time: payload.event_time || null,
         aliado_id: isAliado ? userAliadoId : (payload.aliado_id || null),

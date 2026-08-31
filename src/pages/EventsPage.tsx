@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEventDirectory } from '@/hooks/useEventDirectory';
 import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
+import { dedupeSportNames } from '@/lib/events';
 
 const CATEGORIES = ['Todos', 'Cultural', 'Deportivo', 'Turístico', 'Religioso'];
 const RELIGIOUS_SUB_CATEGORIES = ['Todas', 'Iglesia Católica', 'Iglesia Evangélica'];
@@ -48,8 +49,12 @@ export default function EventsPage() {
         .eq('category', 'Deportivo')
         .not('sub_category', 'is', null);
       if (!data) return [];
-      const sports = new Set(data.map(d => d.sub_category).filter(s => s && s !== 'Otros' && !SPORTS_SUB_CATEGORIES.includes(s)));
-      return Array.from(sports).sort();
+
+      return dedupeSportNames(
+        data
+          .map(d => d.sub_category)
+          .filter(s => s && s !== 'Otros' && !SPORTS_SUB_CATEGORIES.includes(s))
+      );
     }
   });
 

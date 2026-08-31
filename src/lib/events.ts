@@ -44,6 +44,73 @@ export type EventStats = {
   attendance: number;
 };
 
+const SPORT_ALIASES: Record<string, string> = {
+  futbol: 'Fútbol',
+  'futbol sala': 'Fútbol Sala',
+  futbolsala: 'Fútbol Sala',
+  baloncesto: 'Baloncesto',
+  voleibol: 'Voleibol',
+  patinaje: 'Patinaje',
+  ciclismo: 'Ciclismo',
+  atletismo: 'Atletismo',
+};
+
+export function normalizeSportName(value: string | null | undefined): string {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return '';
+
+  const normalizedKey = trimmed
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  if (SPORT_ALIASES[normalizedKey]) {
+    return SPORT_ALIASES[normalizedKey];
+  }
+
+  return trimmed
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+export function normalizeCatalogValue(value: string | null | undefined): string {
+  return (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+export function sportNamesMatch(left: string | null | undefined, right: string | null | undefined): boolean {
+  if (!left && !right) return true;
+  return normalizeCatalogValue(left) === normalizeCatalogValue(right);
+}
+
+export function dedupeSportNames(values: Array<string | null | undefined>): string[] {
+  const seen = new Set<string>();
+
+  return values
+    .map(value => normalizeSportName(value))
+    .filter(Boolean)
+    .filter(value => {
+      const key = normalizeCatalogValue(value);
+
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.localeCompare(b));
+}
+
 /**
  * Normalizes event data, handling legacy categories and ensuring 
  * consistent structure.
@@ -59,6 +126,10 @@ function normalizeEvent(event: any): Event {
   } else if (category === 'Iglesia Evangélica') {
     category = 'Religioso';
     sub_category = 'Iglesia Evangélica';
+  }
+
+  if (category === 'Deportivo' && sub_category) {
+    sub_category = normalizeSportName(sub_category);
   }
 
   const attendance_count = event.saved_events || event.attendance_count;
@@ -89,10 +160,6 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
     }
   }
 
-  if (subCategory && subCategory !== 'Todas') {
-    query = query.eq('sub_category', subCategory);
-  }
-
   if (searchTerm) {
     query = query.ilike('title', `%${searchTerm}%`);
   }
@@ -101,6 +168,15 @@ export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> 
   if (error) throw error;
 
   let dbEvents = (data || []).map(normalizeEvent);
+
+  if (subCategory && subCategory !== 'Todas') {
+    dbEvents = dbEvents.filter(event => {
+      if (event.category === 'Deportivo' || event.category === 'Religioso') {
+        return sportNamesMatch(event.sub_category, subCategory);
+      }
+      return true;
+    });
+  }
 
   return dbEvents.sort((a, b) => a.event_date.localeCompare(b.event_date));
 }
