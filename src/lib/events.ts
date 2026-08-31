@@ -13,6 +13,9 @@ export type Event = {
   featured: boolean;
   aliado_id: string;
   attendance_count?: { count: number }[];
+  tiktok_url?: string | null;
+  instagram_url?: string | null;
+  whatsapp_url?: string | null;
 };
 
 export type Aliado = {
@@ -24,6 +27,9 @@ export type Aliado = {
   created_at: string;
   owner_email?: string;
   user_id?: string;
+  tiktok_url?: string | null;
+  instagram_url?: string | null;
+  whatsapp_url?: string | null;
 };
 
 export type EventFilters = {
@@ -55,10 +61,13 @@ function normalizeEvent(event: any): Event {
     sub_category = 'Iglesia Evangélica';
   }
 
+  const attendance_count = event.saved_events || event.attendance_count;
+
   return {
     ...event,
     category,
     sub_category,
+    attendance_count,
   };
 }
 
@@ -69,7 +78,7 @@ function normalizeEvent(event: any): Event {
 export async function fetchEvents(filters: EventFilters = {}): Promise<Event[]> {
   const { category, subCategory, searchTerm } = filters;
 
-  let query = supabase.from('events').select('*, attendance_count:saved_events(count)');
+  let query = supabase.from('events').select('*, saved_events(count)');
 
   if (category && category !== 'Todos') {
     if (category === 'Religioso') {
@@ -107,7 +116,7 @@ export async function fetchEventStats(): Promise<EventStats> {
   const startOfMonth = `${year}-${pad(month + 1)}-01`;
   const lastDay = new Date(year, month + 1, 0).getDate();
   const endOfMonth = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
-  
+
   const [eventsRes, aliadosRes, attendanceRes] = await Promise.all([
     supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', startOfMonth).lte('event_date', endOfMonth),
     supabase.from('aliados').select('*', { count: 'exact', head: true }),
@@ -144,7 +153,7 @@ export async function fetchAdminStats() {
 export async function fetchFeaturedEvents(): Promise<Event[]> {
   const { data, error } = await supabase
     .from('events')
-    .select('*, attendance_count:saved_events(count)')
+    .select('*, saved_events(count)')
     .eq('featured', true)
     .order('event_date', { ascending: true })
     .limit(3);

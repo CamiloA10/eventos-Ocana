@@ -12,7 +12,7 @@ export function AdminHeader({ userEmail, signOut }: AdminHeaderProps) {
   return (
     <header className="bg-sidebar text-sidebar-foreground px-6 py-4 flex items-center justify-between sticky top-0 z-40">
       <div className="flex flex-col gap-1">
-        <img src="/logo.png" alt="¿Hey pa' dónde vamos?" className="h-16 w-auto" />
+        <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="¿Hey pa' dónde vamos?" className="h-16 w-auto" />
         <p className="text-xs text-sidebar-foreground/60 font-medium pl-2">Panel de Administración</p>
       </div>
       <div className="flex items-center gap-4">
@@ -32,6 +32,6 @@ export function AdminHeader({ userEmail, signOut }: AdminHeaderProps) {
           Salir
         </button>
       </div>
-    </header>
+    </header >
   );
 }

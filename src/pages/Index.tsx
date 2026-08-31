@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Music, Dumbbell, Map, LogIn, CalendarDays, UserPlus, Sparkles, ArrowRight, Star, CheckCircle2, Search, Zap, ShieldCheck, Globe, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Music, Dumbbell, Map, LogIn, CalendarDays, UserPlus, Sparkles, ArrowRight, Star, CheckCircle2, Search, Zap, ShieldCheck, Globe, Facebook, Instagram, Twitter, Youtube, Trophy } from 'lucide-react';
 import heroImg from '@/assets/ocana-hero.jpg';
 import { useStats } from '@/hooks/useEvents';
 import { useEventDirectory } from '@/hooks/useEventDirectory';
+import { useTopRatedEvents } from '@/hooks/useRatings';
 import EventCard from '@/components/EventCard';
 import Navbar from '@/components/Navbar';
 import { Asset } from '@/lib/assets';
@@ -12,9 +13,18 @@ export default function Index() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const { data: stats = { events: 0, aliados: 0, attendance: 0 } } = useStats();
-  
+
   // Use the Unified Event Directory for the homepage preview
   const { data: events = [] } = useEventDirectory({ category: 'Todos' });
+  const { data: topEvents = [], isLoading: loadingTopEvents } = useTopRatedEvents();
+  const [selectedTopEvent, setSelectedTopEvent] = useState<any | null>(null);
+  const [topEventKey, setTopEventKey] = useState(0);
+
+  const customSportsList = Array.from(new Set(
+    events
+      .filter(e => e.category === 'Deportivo' && e.sub_category && !['Fútbol', 'Fútbol Sala', 'Baloncesto', 'Voleibol', 'Patinaje', 'Ciclismo', 'Atletismo', 'Otros'].includes(e.sub_category))
+      .map(e => e.sub_category as string)
+  )).sort();
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -25,7 +35,15 @@ export default function Index() {
     }
   };
 
-  const [showReligiousSubs, setShowReligiousSubs] = useState(false);
+  useEffect(() => {
+    if (window.location.hash === '#ranking') {
+      setTimeout(() => {
+        document.getElementById('ranking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, []);
+
+  const [activeCategoryGroup, setActiveCategoryGroup] = useState<'Religioso' | 'Deportivo' | null>(null);
 
   const categories = [
     { label: 'Cultural', tag: 'Arte & Música', img: Asset.getCategoryImage('Cultural'), count: `${events.filter(e => e.category === 'Cultural').length} eventos` },
@@ -127,13 +145,13 @@ export default function Index() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {!showReligiousSubs ? (
+            {!activeCategoryGroup ? (
               categories.map((cat) => (
                 <div
                   key={cat.label}
                   onClick={() => {
-                    if (cat.label === 'Religioso') {
-                      setShowReligiousSubs(true);
+                    if (cat.label === 'Religioso' || cat.label === 'Deportivo') {
+                      setActiveCategoryGroup(cat.label as 'Religioso' | 'Deportivo');
                     } else {
                       navigate(`/eventos?categoria=${cat.label}`);
                     }
@@ -155,32 +173,55 @@ export default function Index() {
                 </div>
               ))
             ) : (
-              <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {[
-                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: Asset.getCategoryImage('Iglesia Católica'), count: `${events.filter(e => e.sub_category === 'Iglesia Católica').length} eventos` },
-                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: Asset.getCategoryImage('Iglesia Evangélica'), count: `${events.filter(e => e.sub_category === 'Iglesia Evangélica').length} eventos` },
-                ].map((sub) => (
-                  <Link
-                    key={sub.label}
-                    to={`/eventos?categoria=Religioso&subcategoria=${sub.label}`}
-                    className="group relative h-[450px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-100 bg-slate-100 transition-all hover:-translate-y-2 duration-500"
-                  >
-                    <img src={sub.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={sub.label} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/10 to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
+              <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {(activeCategoryGroup === 'Religioso' ? [
+                  { label: 'Iglesia Católica', tag: 'Fe & Tradición', img: Asset.getCategoryImage('Iglesia Católica') },
+                  { label: 'Iglesia Evangélica', tag: 'Alabanza & Vida', img: Asset.getCategoryImage('Iglesia Evangélica') },
+                ] : [
+                  { label: 'Fútbol', tag: 'Deporte Rey', img: Asset.getCategoryImage('Deportivo') },
+                  { label: 'Fútbol Sala', tag: 'Acción Rápida', img: Asset.getCategoryImage('Deportivo') },
+                  { label: 'Baloncesto', tag: 'Adrenalina', img: Asset.getCategoryImage('Deportivo') },
+                  { label: 'Voleibol', tag: 'Trabajo en Equipo', img: Asset.getCategoryImage('Deportivo') },
+                  { label: 'Patinaje', tag: 'Diversión & Salud', img: Asset.getCategoryImage('Deportivo') },
+                  { label: 'Ciclismo', tag: 'Nuevas Rutas', img: Asset.getCategoryImage('Deportivo') },
+                  { label: 'Atletismo', tag: 'Resistencia', img: Asset.getCategoryImage('Deportivo') },
+                  ...customSportsList.map(sportName => ({ label: sportName, tag: 'Nuevo Deporte', img: Asset.getCategoryImage('Deportivo') })),
+                  { label: 'Otros', tag: 'Más Deportes', img: Asset.getCategoryImage('Deportivo') },
+                ]).map((sub) => {
+                  const count = events.filter(e => e.sub_category === sub.label && e.category === activeCategoryGroup).length;
+                  // Ocultar subcategorías deportivas que no tienen eventos para no saturar
+                  if (activeCategoryGroup === 'Deportivo' && count === 0) return null;
 
-                    <div className="absolute inset-0 p-10 flex flex-col justify-end">
-                      <div className="bg-blue-600/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-black text-[9px] uppercase tracking-[0.2em] w-fit mb-4">
-                        {sub.tag}
+                  return (
+                    <Link
+                      key={sub.label}
+                      to={`/eventos?categoria=${activeCategoryGroup}&subcategoria=${encodeURIComponent(sub.label)}`}
+                      className={`group relative h-[350px] rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100 bg-slate-100 transition-all hover:-translate-y-2 duration-500 ${activeCategoryGroup === 'Religioso' ? 'sm:col-span-1 lg:col-span-2 h-[450px]' : ''}`}
+                    >
+                      <img src={sub.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={sub.label} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
+
+                      <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                        <div className="bg-blue-600/90 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-black text-[9px] uppercase tracking-[0.2em] w-fit mb-4">
+                          {sub.tag}
+                        </div>
+                        <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter italic">{sub.label}</h3>
+                        <div className="flex items-center gap-2 text-white/70 font-bold group-hover:text-white transition-colors uppercase text-[10px] tracking-widest">
+                          {count} eventos <ArrowRight className="w-4 h-4" />
+                        </div>
                       </div>
-                      <h3 className="text-4xl font-black text-white mb-2 uppercase tracking-tighter italic">{sub.label}</h3>
-                      <div className="flex items-center gap-2 text-white/70 font-bold group-hover:text-white transition-colors uppercase text-[10px] tracking-widest">
-                        {sub.count} <ArrowRight className="w-4 h-4" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
+
+                {activeCategoryGroup === 'Deportivo' && events.filter(e => e.category === 'Deportivo').length === 0 && (
+                  <div className="col-span-full py-20 text-center text-slate-500">
+                    Aún no hay eventos deportivos programados.
+                  </div>
+                )}
+
                 <button
-                  onClick={() => setShowReligiousSubs(false)}
+                  onClick={() => setActiveCategoryGroup(null)}
                   className="col-span-full mt-8 text-blue-600 font-black uppercase text-[10px] tracking-widest hover:underline text-center"
                 >
                   ← Volver a todas las categorías
@@ -217,15 +258,81 @@ export default function Index() {
         </section>
       )}
 
+      {/* Top 5 Rated Events Grid */}
+      {topEvents.length > 0 && (
+        <section id="ranking" className="py-24 px-6 bg-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-32 opacity-5 pointer-events-none">
+            <Trophy className="w-96 h-96" />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="flex flex-col mb-16 text-center items-center">
+              <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic flex items-center gap-4 justify-center">
+                <Trophy className="w-10 h-10 text-yellow-500" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-amber-600">Top 5</span> Mejor Calificados
+              </h2>
+              <div className="h-1.5 w-24 bg-yellow-400 rounded-full my-6" />
+              <p className="text-slate-500 font-medium max-w-xl">
+                Descubre los eventos que más han encantado a nuestra comunidad. ¡No te quedes sin vivirlos!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              {topEvents.map((event: any, index: number) => (
+                <div
+                  key={event.id}
+                  onClick={() => { setSelectedTopEvent(event); setTopEventKey(prev => prev + 1); }}
+                  className="group relative bg-white border border-slate-100 rounded-3xl p-6 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-yellow-200 hover:-translate-y-2 transition-all flex flex-col h-full cursor-pointer"
+                >
+                  <div className={`absolute -top-4 -left-4 w-12 h-12 flex items-center justify-center rounded-2xl font-black text-xl shadow-lg border-2 ${index === 0 ? 'bg-yellow-400 text-yellow-900 border-yellow-300' :
+                    index === 1 ? 'bg-slate-200 text-slate-700 border-slate-100' :
+                      index === 2 ? 'bg-amber-600 text-orange-50 border-amber-500' :
+                        'bg-white text-slate-400 border-slate-100'
+                    }`}>
+                    #{index + 1}
+                  </div>
+
+                  {event.image_url ? (
+                    <img src={event.image_url} alt={event.title} className="w-full h-40 object-cover rounded-2xl mb-6 shadow-md" />
+                  ) : (
+                    <div className="w-full h-40 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center">
+                      <Star className="w-10 h-10 text-slate-300" />
+                    </div>
+                  )}
+
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-2">{event.category}</span>
+                    <h4 className="font-bold text-lg text-slate-900 leading-tight mb-2 flex-1">{event.title}</h4>
+
+                    <div className="pt-4 mt-auto border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                        <span className="font-black text-lg text-slate-900">{Number(event.averageRating).toFixed(1)}</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{event.totalRatings} Reseñas</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Refined Premium Footer */}
+
+      {/* Hidden EventCard for Top 5 Modal */}
+      {selectedTopEvent && (
+        <EventCard key={`top-event-${topEventKey}`} event={selectedTopEvent} initialOpen={true} hideCard={true} />
+      )}
+
       <footer className="bg-slate-950 text-slate-400 pt-32 pb-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 mb-20">
             <div className="lg:col-span-5 space-y-10">
               <Link to="/" className="flex items-center gap-3 group w-fit">
-                <img 
-                  src={`${import.meta.env.BASE_URL}assets/logo.png`} 
-                  alt="¿Hey pa' dónde vamos?" 
+                <img
+                  src={`${import.meta.env.BASE_URL}assets/logo.png`}
+                  alt="¿Hey pa' dónde vamos?"
                   className="h-20 md:h-54 w-auto transition-transform group-hover:scale-105 brightness-0 invert"
                 />
               </Link>

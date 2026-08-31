@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Menu, X, LogOut, LayoutDashboard, Sparkles, Bell, Heart } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Sparkles, Bell, Heart, Trophy } from 'lucide-react';
 import NotificationPreferences from './NotificationPreferences';
 
 export default function Navbar() {
@@ -26,15 +26,24 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <img 
-            src={`${import.meta.env.BASE_URL}assets/logo.png`} 
-            alt="¿Hey pa' dónde vamos?" 
+          <img
+            src={`${import.meta.env.BASE_URL}assets/logo.png`}
+            alt="¿Hey pa' dónde vamos?"
             className="h-14 md:h-16 w-auto transition-transform group-hover:scale-105"
           />
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
+          <Link to="/#ranking" onClick={() => {
+            if (window.location.pathname === '/') {
+              document.getElementById('ranking')?.scrollIntoView({ behavior: 'smooth' });
+            }
+          }} className="flex items-center gap-1.5 text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors uppercase tracking-wider">
+            <Trophy className="w-4 h-4" />
+            Top 5
+          </Link>
+
           <Link to="/eventos" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">
             Eventos
           </Link>
@@ -93,6 +102,17 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {open && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 px-6 py-8 flex flex-col gap-6 animate-in slide-in-from-top-4 duration-200">
+          <Link to="/#ranking" className="flex items-center gap-3 text-xl font-bold text-yellow-600" onClick={() => {
+            setOpen(false);
+            if (window.location.pathname === '/') {
+              setTimeout(() => {
+                document.getElementById('ranking')?.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
+            }
+          }}>
+            <Trophy className="w-6 h-6" />
+            Top 5 Rank
+          </Link>
           <Link to="/eventos" className="text-xl font-bold text-slate-900" onClick={() => setOpen(false)}>Eventos</Link>
           {user && (
             <Link to="/eventos?categoria=Favoritos" className="flex items-center gap-3 text-xl font-bold text-slate-900" onClick={() => setOpen(false)}>

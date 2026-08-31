@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Star } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useEventDirectory } from '@/hooks/useEventDirectory';
 import EventCard from '@/components/EventCard';
@@ -8,6 +10,7 @@ import Navbar from '@/components/Navbar';
 
 const CATEGORIES = ['Todos', 'Cultural', 'Deportivo', 'Turístico', 'Religioso'];
 const RELIGIOUS_SUB_CATEGORIES = ['Todas', 'Iglesia Católica', 'Iglesia Evangélica'];
+const SPORTS_SUB_CATEGORIES = ['Todas', 'Fútbol', 'Fútbol Sala', 'Baloncesto', 'Voleibol', 'Patinaje', 'Ciclismo', 'Atletismo', 'Otros'];
 
 export default function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,11 +33,27 @@ export default function EventsPage() {
   // Use the Deep Module for all event retrieval
   const { data: events = [], isLoading } = useEventDirectory({
     category: category === 'Favoritos' ? 'Todos' : category,
-    subCategory: category === 'Religioso' ? subCategory : undefined,
+    subCategory: (category === 'Religioso' || category === 'Deportivo') ? subCategory : undefined,
     searchTerm: search,
     showFavorites: category === 'Favoritos',
     userId: user?.id
   });
+
+  const { data: customSports = [] } = useQuery({
+    queryKey: ['custom-sports'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('sub_category')
+        .eq('category', 'Deportivo')
+        .not('sub_category', 'is', null);
+      if (!data) return [];
+      const sports = new Set(data.map(d => d.sub_category).filter(s => s && s !== 'Otros' && !SPORTS_SUB_CATEGORIES.includes(s)));
+      return Array.from(sports).sort();
+    }
+  });
+
+  const allSportFilters = [...SPORTS_SUB_CATEGORIES.filter(s => s !== 'Otros'), ...customSports, 'Otros'];
 
   const categories = [...CATEGORIES];
   if (user) {
@@ -84,11 +103,13 @@ export default function EventsPage() {
             </div>
           </div>
 
-          {category === 'Religioso' && (
-            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Sub-categorías:</span>
+          {(category === 'Religioso' || category === 'Deportivo') && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest sm:ml-4 whitespace-nowrap">
+                {category === 'Deportivo' ? 'Deportes' : 'Sub-categorías'}:
+              </span>
               <div className="flex gap-2 flex-wrap">
-                {RELIGIOUS_SUB_CATEGORIES.map((sub) => (
+                {(category === 'Religioso' ? RELIGIOUS_SUB_CATEGORIES : allSportFilters).map((sub) => (
                   <button
                     key={sub}
                     onClick={() => setSubCategory(sub)}

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { X, Check, Image as ImageIcon } from 'lucide-react';
+import { X, Check, Image as ImageIcon, Instagram } from 'lucide-react';
+import { TikTokIcon, WhatsAppIcon } from '@/components/SocialIcons';
 import { type Event, type Aliado } from '@/lib/events';
 
 const CATEGORIES = ['Cultural', 'Deportivo', 'Turístico', 'Religioso'] as const;
 const RELIGIOUS_SUB_CATEGORIES = ['Iglesia Católica', 'Iglesia Evangélica'] as const;
+const SPORTS_SUB_CATEGORIES = ['Fútbol', 'Fútbol Sala', 'Baloncesto', 'Voleibol', 'Patinaje', 'Ciclismo', 'Atletismo', 'Otros'] as const;
 type Category = typeof CATEGORIES[number];
 
 interface EventFormProps {
@@ -11,6 +13,7 @@ interface EventFormProps {
   initialData: any;
   aliados: Aliado[];
   isAliado: boolean;
+  currentUserAliado?: Aliado | null;
   onSubmit: (payload: any, imageFile: File | null) => Promise<void>;
   onCancel: () => void;
   submitting: boolean;
@@ -22,6 +25,7 @@ export function EventForm({
   initialData,
   aliados,
   isAliado,
+  currentUserAliado,
   onSubmit,
   onCancel,
   submitting,
@@ -30,11 +34,10 @@ export function EventForm({
   const [form, setForm] = useState(initialData);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const currentAliado = isAliado ? null : aliados.find(a => a.id === form.aliado_id);
-  const displayCategory = isAliado ? (form.category || 'Tu categoría asignada') : (currentAliado?.category || form.category || 'Esperando selección...');
+  const currentAliado = isAliado ? currentUserAliado : aliados.find(a => a.id === form.aliado_id);
+  const displayCategory = isAliado ? (currentAliado?.category || form.category || 'Tu categoría asignada') : (currentAliado?.category || form.category || 'Esperando selección...');
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const minDate = editId && form.event_date && form.event_date < todayStr ? form.event_date : todayStr;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +82,7 @@ export function EventForm({
                       ...form,
                       aliado_id: aId,
                       category: selected?.category || form.category,
-                      sub_category: selected?.category === 'Religioso' ? selected.sub_category : ''
+                      sub_category: selected?.category === 'Religioso' ? selected.sub_category : (selected?.category === 'Deportivo' ? (selected.sub_category || '') : '')
                     });
                   }}
                   className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
@@ -104,16 +107,51 @@ export function EventForm({
                   {isAliado ? 'Tu categoría es asignada por la administración.' : 'La categoría se hereda del aliado seleccionado.'}
                 </p>
               </div>
-
-              {displayCategory === 'Religioso' && (
-                <div className="animate-in fade-in slide-in-from-top-1 duration-300">
-                  <label className="block text-sm font-semibold mb-1 text-primary">Denominación</label>
-                  <div className="px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold">
-                    {isAliado ? form.sub_category : (currentAliado?.sub_category || form.sub_category)}
-                  </div>
-                </div>
-              )}
             </div>
+
+            {displayCategory === 'Religioso' && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+                <label className="block text-sm font-semibold mb-1 text-primary">Denominación</label>
+                <div className="px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold">
+                  {isAliado ? form.sub_category : (currentAliado?.sub_category || form.sub_category)}
+                </div>
+              </div>
+            )}
+
+            {displayCategory === 'Deportivo' && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+                <label className="block text-sm font-semibold mb-1 text-primary">Deporte *</label>
+                <select
+                  required
+                  value={
+                    SPORTS_SUB_CATEGORIES.includes(form.sub_category as any) && form.sub_category !== 'Otros'
+                      ? form.sub_category
+                      : (form.sub_category ? 'Otros' : '')
+                  }
+                  onChange={e => {
+                    setForm({ ...form, sub_category: e.target.value });
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-primary/20 bg-primary/5 text-foreground font-semibold focus:outline-none focus:border-primary transition-colors"
+                >
+                  <option value="">Seleccionar deporte...</option>
+                  {SPORTS_SUB_CATEGORIES.map(sc => <option key={sc} value={sc}>{sc}</option>)}
+                </select>
+
+                {/* Custom sport input if 'Otros' is selected or a custom sport is present */}
+                {(form.sub_category && (!SPORTS_SUB_CATEGORIES.includes(form.sub_category as any) || form.sub_category === 'Otros')) ? (
+                  <div className="mt-2 animate-in slide-in-from-top-2 duration-300">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Escribe el nombre del deporte..."
+                      value={form.sub_category === 'Otros' ? '' : form.sub_category}
+                      onChange={e => setForm({ ...form, sub_category: e.target.value === '' ? 'Otros' : e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
 
 
             <div>
@@ -121,9 +159,16 @@ export function EventForm({
               <input
                 required
                 type="date"
-                min={minDate}
+                min={editId && form.event_date === initialData?.event_date && form.event_date < todayStr ? form.event_date : todayStr}
                 value={form.event_date}
-                onChange={e => setForm({ ...form, event_date: e.target.value })}
+                onChange={e => {
+                  const newDate = e.target.value;
+                  if (newDate !== initialData?.event_date && newDate < todayStr) {
+                    alert('Si modificas la fecha, debes seleccionar una fecha que no haya pasado (hoy o a futuro).');
+                    return;
+                  }
+                  setForm({ ...form, event_date: newDate });
+                }}
                 className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -159,6 +204,49 @@ export function EventForm({
                 className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors resize-none"
                 placeholder="Describe el evento..."
               />
+            </div>
+
+            <div className="md:col-span-2 pt-4 border-t border-border">
+              <h4 className="text-sm font-bold text-primary mb-3">Redes Sociales (Opcionales)</h4>
+              <p className="text-[10px] text-muted-foreground mb-3">Estos enlaces se mostrarán en la tarjeta de detalles del evento para que los asistentes puedan contactar o ver más sobre el organizador.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold mb-1">
+                    <TikTokIcon className="w-4 h-4" /> Enlace de TikTok
+                  </label>
+                  <input
+                    type="url"
+                    value={form.tiktok_url || ''}
+                    onChange={e => setForm({ ...form, tiktok_url: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors text-sm"
+                    placeholder="https://tiktok.com/@usuario"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold mb-1">
+                    <Instagram className="w-4 h-4" /> Enlace de Instagram
+                  </label>
+                  <input
+                    type="url"
+                    value={form.instagram_url || ''}
+                    onChange={e => setForm({ ...form, instagram_url: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors text-sm"
+                    placeholder="https://instagram.com/usuario"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold mb-1">
+                    <WhatsAppIcon className="w-4 h-4" /> Enlace de WhatsApp
+                  </label>
+                  <input
+                    type="url"
+                    value={form.whatsapp_url || ''}
+                    onChange={e => setForm({ ...form, whatsapp_url: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary transition-colors text-sm"
+                    placeholder="https://wa.me/num..."
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="md:col-span-2">

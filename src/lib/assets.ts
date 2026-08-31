@@ -73,8 +73,8 @@ export const Asset = {
       'Deportivo': `${base}categories/deportivo.jpg`,
       'Turístico': `${base}categories/turistico.jpg`,
       'Religioso': `${base}categories/religioso.jpg`,
-      'Iglesia Católica': `${base}categories/iglesia-catolica.jpg`,
-      'Iglesia Evangélica': `${base}categories/iglesia-evangelica.jpg`,
+      'Iglesia Católica': `${base}categories/religioso.jpg`,
+      'Iglesia Evangélica': `${base}categories/religioso.jpg`,
     };
 
     return CATEGORY_IMAGES[categoryName] || this.getPlaceholder('event');

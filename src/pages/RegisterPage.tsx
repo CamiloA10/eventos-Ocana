@@ -9,7 +9,10 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,8 +21,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError('La contraseña debe tener mínimo 8 caracteres, mayúsculas, minúsculas y símbolos.');
       return;
     }
 
@@ -31,7 +40,9 @@ export default function RegisterPage() {
         password,
         options: {
           data: {
-            full_name: name
+            full_name: name,
+            phone: phone,
+            birth_date: birthDate
           }
         }
       });
@@ -71,7 +82,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="flex justify-center mb-6">
-            <img src="/logo.png" alt="¿Hey pa' dónde vamos?" className="h-24 w-auto" />
+            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="¿Hey pa' dónde vamos?" className="h-24 w-auto brightness-0 invert filter-none" style={{ filter: "invert(0)" }} />
           </Link>
           <h1 className="font-display text-3xl font-bold text-foreground mt-4 mb-2">Crear Cuenta</h1>
           <p className="text-muted-foreground">Únete para guardar tus eventos favoritos</p>
@@ -89,6 +100,31 @@ export default function RegisterPage() {
                 placeholder="Juan Pérez"
                 className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1">Número de celular</label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="300 000 0000"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1">Fecha de nacimiento</label>
+                <input
+                  type="date"
+                  required
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-border bg-background text-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
             </div>
 
             <div>
@@ -122,7 +158,21 @@ export default function RegisterPage() {
                   {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Debe tener al menos 6 caracteres</p>
+              <p className="text-[10px] text-muted-foreground mt-2 font-medium">Debe tener mínimo 8 caracteres, mayúsculas, minúsculas y símbolos.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-1">Confirmar Contraseña</label>
+              <div className="relative">
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 pr-12 rounded-xl border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
             </div>
 
             {error && (

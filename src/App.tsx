@@ -12,12 +12,20 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const Watermarks = () => (
+  <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-4 opacity-50 hover:opacity-100 transition-all pointer-events-none group">
+    <img src={`${import.meta.env.BASE_URL}assets/ufps_logo.png`} alt="UFPS" className="h-10 md:h-12 w-auto contrast-125 mix-blend-multiply" />
+    <img src={`${import.meta.env.BASE_URL}assets/cedit_logo.png`} alt="CEDIT" className="h-8 md:h-10 w-auto mix-blend-multiply" />
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter basename="/quehaypahacer/">
+        <Watermarks />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/eventos" element={<EventsPage />} />

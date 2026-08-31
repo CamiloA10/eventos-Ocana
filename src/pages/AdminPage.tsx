@@ -4,8 +4,9 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useEvents, useAliados, useAdminStats, type Event, type Aliado } from '@/hooks/useEvents';
-import { Plus, Pencil, Trash2, CalendarDays, MapPin, Building2, Search, Users, Activity, CheckCircle2, Bookmark, Building, ChevronDown, ChevronUp, Star } from 'lucide-react';
-import { useEventRating } from '@/hooks/useRatings';
+import { Plus, Pencil, Trash2, CalendarDays, MapPin, Building2, Search, Users, Activity, CheckCircle2, Bookmark, Building, ChevronDown, ChevronUp, Star, Trophy, Instagram } from 'lucide-react';
+import { TikTokIcon, WhatsAppIcon } from '@/components/SocialIcons';
+import { useEventRating, useTopRatedEvents } from '@/hooks/useRatings';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,7 @@ import { AdminHeader } from '@/components/admin/AdminHeader';
 import { EventForm } from '@/components/admin/EventForm';
 import { AliadoForm } from '@/components/admin/AliadoForm';
 import { useEventAttendance } from '@/hooks/useAttendance';
+import EventCard from '@/components/EventCard';
 
 function EventAdminStats({ eventId }: { eventId: string }) {
   const { data } = useEventAttendance(eventId);
@@ -95,6 +97,9 @@ const emptyEventForm = {
   description: '',
   image_url: '',
   aliado_id: '',
+  tiktok_url: '',
+  instagram_url: '',
+  whatsapp_url: '',
 };
 
 const emptyAliadoForm: AliadoFormData = {
@@ -104,6 +109,9 @@ const emptyAliadoForm: AliadoFormData = {
   sub_category: '',
   email: '',
   password: '',
+  tiktok_url: '',
+  instagram_url: '',
+  whatsapp_url: '',
 };
 
 export default function AdminPage() {
@@ -130,11 +138,18 @@ export default function AdminPage() {
     enabled: isAdmin
   });
 
-  const [activeTab, setActiveTab] = useState<'events' | 'aliados' | 'users'>('events');
+  const { data: topEvents = [], isLoading: loadingTopEvents } = useTopRatedEvents(isAliado ? userAliadoId : undefined);
+
+  const [activeTab, setActiveTab] = useState<'events' | 'aliados' | 'users' | 'ranking'>('events');
   const [overviewFilter, setOverviewFilter] = useState<'active' | 'past' | 'popular' | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAliadoId, setSelectedAliadoId] = useState<string | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [selectedTopEvent, setSelectedTopEvent] = useState<any | null>(null);
+  const [topEventKey, setTopEventKey] = useState(0);
+
+  const currentUserAliado = isAliado ? aliados.find(a => a.id === userAliadoId) : null;
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -175,7 +190,8 @@ export default function AdminPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'event' | 'aliado' } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'event' } | null>(null);
+  const [confirmToggleStatus, setConfirmToggleStatus] = useState<{ id: string, name: string, isDeactivated: boolean } | null>(null);
 
   useEffect(() => {
     if (!loading) {
@@ -223,14 +239,25 @@ export default function AdminPage() {
       // If it's a partner creating an event, we inherit THEIR category
       const currentAliado = isAliado ? aliados.find(a => a.id === userAliadoId) : aliados.find(a => a.id === payload.aliado_id);
 
+      const finalCategory = currentAliado?.category || payload.category;
+
+      if (!finalCategory || finalCategory.trim() === '') {
+        throw new Error("El aliado seleccionado (o tu cuenta) no tiene una Categoría asignada. Por favor, edita los datos del Aliado para asignarle una categoría antes de crear un evento.");
+      }
+
       const eventData = {
         ...payload,
-        category: currentAliado?.category || payload.category,
-        sub_category: currentAliado?.category === 'Religioso' ? currentAliado.sub_category : (payload.category === 'Religioso' ? payload.sub_category : null),
+        category: finalCategory,
+        sub_category: finalCategory === 'Religioso'
+          ? (currentAliado?.category === 'Religioso' ? currentAliado.sub_category : payload.sub_category)
+          : (finalCategory === 'Deportivo' ? payload.sub_category : null),
         image_url: imageUrl || null,
         event_time: payload.event_time || null,
         aliado_id: isAliado ? userAliadoId : (payload.aliado_id || null),
         created_by: user.id,
+        tiktok_url: payload.tiktok_url || null,
+        instagram_url: payload.instagram_url || null,
+        whatsapp_url: payload.whatsapp_url || null,
       };
 
       if (editId) {
@@ -276,15 +303,31 @@ export default function AdminPage() {
       if (confirmDelete.type === 'event') {
         const { error } = await supabase.from('events').delete().eq('id', confirmDelete.id);
         if (error) throw error;
-      } else {
-        await deleteAliadoComplete(confirmDelete.id);
+        qc.invalidateQueries({ queryKey: ['events'] });
+        toast({ title: "Evento eliminado correctamente" });
       }
-      qc.invalidateQueries({ queryKey: [confirmDelete.type === 'event' ? 'events' : 'aliados'] });
-      toast({ title: "Eliminado correctamente" });
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error al eliminar", description: err.message });
     } finally {
       setConfirmDelete(null);
+    }
+  };
+
+  const handleToggleAliadoStatus = async () => {
+    if (!confirmToggleStatus) return;
+    try {
+      const { id, name, isDeactivated } = confirmToggleStatus;
+      const newName = isDeactivated ? name.replace('[DESACTIVADO] ', '') : `[DESACTIVADO] ${name}`;
+
+      const { error } = await supabase.from('aliados').update({ name: newName }).eq('id', id);
+      if (error) throw error;
+
+      qc.invalidateQueries({ queryKey: ['aliados'] });
+      toast({ title: isDeactivated ? "Aliado activado correctamente" : "Aliado desactivado correctamente" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error al cambiar estado", description: err.message });
+    } finally {
+      setConfirmToggleStatus(null);
     }
   };
 
@@ -301,19 +344,30 @@ export default function AdminPage() {
             Eventos
           </button>
           {isAdmin && (
+            <>
+              <button
+                onClick={() => setActiveTab('aliados')}
+                className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'aliados' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
+              >
+                Aliados
+              </button>
+            </>
+          )}
+
+          {(isAdmin || isAliado) && (
             <button
-              onClick={() => setActiveTab('aliados')}
-              className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'aliados' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
+              onClick={() => setActiveTab('ranking')}
+              className={`font-semibold px-4 py-2 rounded-full transition-colors ${activeTab === 'ranking' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
             >
-              Aliados
+              Ranking Top 5
             </button>
           )}
         </div>
 
-        {isAdmin && (
+        {(isAdmin || isAliado) && (
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-4 font-display text-foreground">Vista General</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className={`grid gap-4 ${isAdmin ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-3'}`}>
               <div
                 onClick={() => { setActiveTab('events'); setOverviewFilter(overviewFilter === 'active' ? null : 'active'); }}
                 className={`cursor-pointer border rounded-2xl p-4 card-shadow flex flex-col items-center justify-center text-center transition-all ${activeTab === 'events' && overviewFilter === 'active' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-card border-border hover:border-primary/50'}`}
@@ -330,22 +384,28 @@ export default function AdminPage() {
                 <p className="text-2xl font-display font-black text-primary">{pastEventsCount}</p>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Finalizados</p>
               </div>
-              <div
-                onClick={() => { setActiveTab('users'); setOverviewFilter(null); }}
-                className={`cursor-pointer border transition-all rounded-2xl p-4 card-shadow flex flex-col items-center justify-center text-center ${activeTab === 'users' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-card border-border hover:border-primary/50'}`}
-              >
-                <Users className="w-5 h-5 text-indigo-500 mb-2" />
-                <p className="text-2xl font-display font-black text-primary">{users.length}</p>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Usuarios</p>
-              </div>
-              <div
-                onClick={() => { setActiveTab('aliados'); setOverviewFilter(null); }}
-                className={`cursor-pointer border transition-all rounded-2xl p-4 card-shadow flex flex-col items-center justify-center text-center ${activeTab === 'aliados' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-card border-border hover:border-primary/50'}`}
-              >
-                <Building className="w-5 h-5 text-orange-500 mb-2" />
-                <p className="text-2xl font-display font-black text-primary">{aliados.length}</p>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Aliados</p>
-              </div>
+
+              {isAdmin && (
+                <>
+                  <div
+                    onClick={() => { setActiveTab('users'); setOverviewFilter(null); }}
+                    className={`cursor-pointer border transition-all rounded-2xl p-4 card-shadow flex flex-col items-center justify-center text-center ${activeTab === 'users' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-card border-border hover:border-primary/50'}`}
+                  >
+                    <Users className="w-5 h-5 text-indigo-500 mb-2" />
+                    <p className="text-2xl font-display font-black text-primary">{users.length}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Usuarios</p>
+                  </div>
+                  <div
+                    onClick={() => { setActiveTab('aliados'); setOverviewFilter(null); }}
+                    className={`cursor-pointer border transition-all rounded-2xl p-4 card-shadow flex flex-col items-center justify-center text-center ${activeTab === 'aliados' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-card border-border hover:border-primary/50'}`}
+                  >
+                    <Building className="w-5 h-5 text-orange-500 mb-2" />
+                    <p className="text-2xl font-display font-black text-primary">{aliados.length}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Aliados</p>
+                  </div>
+                </>
+              )}
+
               <div
                 onClick={() => { setActiveTab('events'); setOverviewFilter(overviewFilter === 'popular' ? null : 'popular'); }}
                 className={`cursor-pointer border rounded-2xl p-4 card-shadow flex flex-col items-center justify-center text-center transition-all ${activeTab === 'events' && overviewFilter === 'popular' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'bg-card border-border hover:border-primary/50'}`}
@@ -387,8 +447,8 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {CATEGORIES.map(cat => {
+            <div className={`grid gap-4 mb-8 ${isAdmin ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-2'}`}>
+              {CATEGORIES.filter(cat => isAliado ? cat === currentUserAliado?.category : true).map(cat => {
                 const count = eventsForCategory.filter(e => e.category === cat).length;
                 return (
                   <div
@@ -401,13 +461,16 @@ export default function AdminPage() {
                   </div>
                 );
               })}
-              <div
-                onClick={() => setSelectedCategory(null)}
-                className={`cursor-pointer rounded-2xl p-4 card-shadow text-center transition-all ${selectedCategory === null ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card text-primary border border-border hover:border-primary/50'}`}
-              >
-                <p className={`text-2xl font-display font-bold ${selectedCategory === null ? 'text-primary-foreground' : 'text-primary'}`}>{eventsForCategory.length}</p>
-                <p className={`text-sm ${selectedCategory === null ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>Total</p>
-              </div>
+
+              {isAdmin && (
+                <div
+                  onClick={() => setSelectedCategory(null)}
+                  className={`cursor-pointer rounded-2xl p-4 card-shadow text-center transition-all ${selectedCategory === null ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card text-primary border border-border hover:border-primary/50'}`}
+                >
+                  <p className={`text-2xl font-display font-bold ${selectedCategory === null ? 'text-primary-foreground' : 'text-primary'}`}>{eventsForCategory.length}</p>
+                  <p className={`text-sm ${selectedCategory === null ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>Total</p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between mb-6">
@@ -453,6 +516,58 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+        ) : activeTab === 'ranking' ? (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-display text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
+                <Trophy className="w-8 h-8 text-yellow-500" />
+                Top 5 Mejores Eventos
+              </h2>
+            </div>
+
+            {loadingTopEvents ? (
+              <div className="flex justify-center p-8">
+                <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+              </div>
+            ) : topEvents.length === 0 ? (
+              <div className="text-center p-8 bg-card rounded-2xl border border-border card-shadow">
+                <p className="text-muted-foreground">Aún no hay eventos con calificaciones.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topEvents.map((event: any, index: number) => (
+                  <div key={event.id} onClick={() => { setSelectedTopEvent({ ...event, rankingPosition: index + 1 }); setTopEventKey(prev => prev + 1); }} className="bg-card border border-border rounded-2xl p-4 flex gap-4 card-shadow relative overflow-hidden cursor-pointer hover:border-primary/50 transition-all active:scale-[0.98]">
+                    {/* Medal ribbon / rank indicator */}
+                    <div className={`absolute top-0 left-0 bottom-0 w-2 ${index === 0 ? 'bg-yellow-400' :
+                      index === 1 ? 'bg-slate-300' :
+                        index === 2 ? 'bg-amber-600' : 'bg-primary/50'
+                      }`} />
+
+                    <div className="pl-2 flex items-center justify-center w-12 flex-shrink-0">
+                      <span className="font-display text-4xl font-black text-muted/30">
+                        #{index + 1}
+                      </span>
+                    </div>
+
+                    {event.image_url && <img src={event.image_url} alt={event.title} className="w-20 h-20 rounded-xl object-cover hidden sm:block" />}
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <h4 className="font-bold text-lg text-foreground truncate">{event.title}</h4>
+                      <p className="text-sm text-muted-foreground truncate">{event.category} - {event.location}</p>
+                    </div>
+
+                    <div className="flex flex-col items-end justify-center min-w-[120px] bg-yellow-50 rounded-xl px-4 py-2 border border-yellow-100">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                        <span className="font-black text-2xl text-yellow-700">{Number(event.averageRating).toFixed(1)}</span>
+                      </div>
+                      <span className="text-xs font-bold text-yellow-600/70">{event.totalRatings} reseñas</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="col-span-full flex items-center justify-between mb-2">
@@ -465,40 +580,68 @@ export default function AdminPage() {
                 Nuevo Aliado
               </button>
             </div>
-            {aliados.map(aliado => (
-              <div key={aliado.id} className="bg-card border border-border rounded-2xl p-5 flex items-start justify-between card-shadow">
-                <div className="flex-1">
-                  <h4 className="font-bold text-lg mb-1">{aliado.name}</h4>
-                  <p className="text-sm text-muted-foreground mb-3">{aliado.description}</p>
-                  <div className="bg-muted/50 rounded-xl p-3 text-xs text-muted-foreground border border-border">
-                    <p><span className="font-bold text-primary">Correo:</span> {(aliado as any).owner_email}</p>
+            {aliados.map(aliado => {
+              const isDeactivated = aliado.name.startsWith('[DESACTIVADO]');
+              return (
+                <div key={aliado.id} className={`bg-card border ${isDeactivated ? 'border-destructive/30 bg-destructive/5' : 'border-border'} rounded-2xl p-5 flex items-start justify-between card-shadow`}>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className={`font-bold text-lg ${isDeactivated ? 'text-destructive' : ''}`}>{aliado.name}</h4>
+                      {isDeactivated && <span className="px-2 py-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full font-black uppercase tracking-wider">Desactivado</span>}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">{aliado.description}</p>
+                    <div className="bg-muted/50 rounded-xl p-3 text-xs text-muted-foreground border border-border">
+                      <p><span className="font-bold text-primary">Correo:</span> {(aliado as any).owner_email}</p>
+
+                      {(aliado.tiktok_url || aliado.instagram_url || aliado.whatsapp_url) && (
+                        <div className="mt-2 pt-2 border-t border-border flex gap-3">
+                          {aliado.tiktok_url && <a href={aliado.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline"><TikTokIcon className="w-3.5 h-3.5" /> TikTok</a>}
+                          {aliado.instagram_url && <a href={aliado.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline"><Instagram className="w-3.5 h-3.5" /> Instagram</a>}
+                          {aliado.whatsapp_url && <a href={aliado.whatsapp_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline"><WhatsAppIcon className="w-3.5 h-3.5" /> WhatsApp</a>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => {
+                        setEditId(aliado.id);
+                        setAliadoFormData({
+                          name: isDeactivated ? aliado.name.replace('[DESACTIVADO] ', '') : aliado.name,
+                          description: aliado.description || '',
+                          category: aliado.category || '',
+                          sub_category: aliado.sub_category || '',
+                          email: aliado.owner_email || '',
+                          password: '',
+                          tiktok_url: aliado.tiktok_url || '',
+                          instagram_url: aliado.instagram_url || '',
+                          whatsapp_url: aliado.whatsapp_url || '',
+                        });
+                        setShowAliadoForm(true);
+                      }}
+                      className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setConfirmToggleStatus({ id: aliado.id, name: aliado.name, isDeactivated })}
+                      className={`p-2 rounded-xl bg-muted transition-all ${isDeactivated ? 'hover:bg-emerald-500 hover:text-emerald-50' : 'hover:bg-destructive hover:text-destructive-foreground'}`}
+                      title={isDeactivated ? "Activar Aliado" : "Desactivar Aliado"}
+                    >
+                      {isDeactivated ? <CheckCircle2 className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={() => {
-                      setEditId(aliado.id);
-                      setAliadoFormData({
-                        name: aliado.name,
-                        description: aliado.description || '',
-                        category: aliado.category || '',
-                        sub_category: aliado.sub_category || '',
-                        email: aliado.owner_email || '',
-                        password: ''
-                      });
-                      setShowAliadoForm(true);
-                    }}
-                    className="p-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-all"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setConfirmDelete({ id: aliado.id, type: 'aliado' })} className="p-2 rounded-xl bg-muted hover:bg-destructive hover:text-destructive-foreground transition-all"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
+
+      {/* Hidden EventCard for Top 5 Modal in Admin Panel */}
+      {selectedTopEvent && (
+        <EventCard key={`admin-top-event-${topEventKey}`} event={selectedTopEvent} initialOpen={true} hideCard={true} />
+      )}
 
       {showEventForm && (
         <EventForm
@@ -506,6 +649,7 @@ export default function AdminPage() {
           initialData={eventFormData}
           aliados={aliados}
           isAliado={isAliado}
+          currentUserAliado={currentUserAliado}
           onSubmit={handleEventSubmit}
           onCancel={resetForms}
           submitting={submitting}
@@ -527,12 +671,34 @@ export default function AdminPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Está seguro de eliminar este evento?</AlertDialogTitle>
             <AlertDialogDescription>Esta acción no se puede deshacer. Se eliminará permanentemente el registro.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Eliminar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmToggleStatus} onOpenChange={() => setConfirmToggleStatus(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿{confirmToggleStatus?.isDeactivated ? 'Activar' : 'Desactivar'} a este aliado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmToggleStatus?.isDeactivated
+                ? 'El aliado volverá a tener acceso a la plataforma.'
+                : 'El aliado ya no podrá iniciar sesión en la plataforma y sus accesos serán suspendidos.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleToggleAliadoStatus}
+              className={confirmToggleStatus?.isDeactivated ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+            >
+              {confirmToggleStatus?.isDeactivated ? 'Sí, Activar' : 'Sí, Desactivar'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

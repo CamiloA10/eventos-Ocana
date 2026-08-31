@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CalendarDays, MapPin, Star, ArrowRight, ShieldCheck, Clock, Check, Share2, Heart, X } from 'lucide-react';
+import { CalendarDays, MapPin, Star, ArrowRight, ShieldCheck, Clock, Check, Share2, Heart, X, Instagram } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { type Event } from '@/hooks/useEvents';
@@ -9,6 +9,7 @@ import { useEventRating, useSubmitRating } from '@/hooks/useRatings';
 import { useAuth } from '@/hooks/useAuth';
 import { Asset } from '@/lib/assets';
 import { ImageWithLoader } from './ui/ImageWithLoader';
+import { TikTokIcon, WhatsAppIcon } from '@/components/SocialIcons';
 
 const CATEGORY_COLORS: Record<string, string> = {
   Cultural: 'bg-blue-50 text-blue-700 border-blue-100',
@@ -18,11 +19,13 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 interface Props {
-  event: Event;
+  event: Event & { averageRating?: number; totalRatings?: number; rankingPosition?: number };
   initialOpen?: boolean;
+  hideCard?: boolean;
+  rankingPosition?: number;
 }
 
-export default function EventCard({ event, initialOpen = false }: Props) {
+export default function EventCard({ event, initialOpen = false, hideCard = false, rankingPosition }: Props) {
   const [showDetails, setShowDetails] = useState(initialOpen);
   const { user } = useAuth();
 
@@ -80,100 +83,106 @@ export default function EventCard({ event, initialOpen = false }: Props) {
   const cardImage = Asset.getImageUrl(event.image_url, 'event', { size: 'sm' });
   const modalImage = Asset.getImageUrl(event.image_url, 'event', { size: 'lg' });
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isPastEvent = event.event_date < todayStr;
+  const isRankingView = !!(rankingPosition || event.rankingPosition);
+
   return (
     <>
-      <div
-        onClick={() => setShowDetails(true)}
-        className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.1)] hover:border-blue-100 transition-all duration-500 flex flex-col h-full transform hover:-translate-y-2 cursor-pointer"
-      >
-        <div className="relative h-64 overflow-hidden">
-          <ImageWithLoader
-            src={cardImage}
-            alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-            fallbackSrc={Asset.getPlaceholder('event')}
-          />
+      {!hideCard && (
+        <div
+          onClick={() => setShowDetails(true)}
+          className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_25px_60px_rgba(0,0,0,0.1)] hover:border-blue-100 transition-all duration-500 flex flex-col h-full transform hover:-translate-y-2 cursor-pointer"
+        >
+          <div className="relative h-64 overflow-hidden">
+            <ImageWithLoader
+              src={cardImage}
+              alt={event.title}
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              fallbackSrc={Asset.getPlaceholder('event')}
+            />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-          <div className="absolute top-6 left-6 flex flex-col gap-2">
-            <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1.5 border border-white/20">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              Verificado
-            </div>
-          </div>
-
-          <div className="absolute top-6 right-6 flex gap-2">
-            <button
-              onClick={onShare}
-              className="p-3 rounded-2xl backdrop-blur-md bg-white/80 text-slate-400 hover:text-blue-600 hover:bg-white shadow-lg transition-all duration-300"
-              title="Compartir"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onToggleSave}
-              disabled={isPending}
-              className={`p-3 rounded-2xl backdrop-blur-md shadow-lg transition-all duration-300 ${saved
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/80 text-slate-400 hover:text-blue-600 hover:bg-white'
-                } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {saved ? <Check className="w-4 h-4 stroke-[3px]" /> : <Heart className="w-4 h-4" />}
-            </button>
-          </div>
-
-          <div className="absolute bottom-4 left-6 right-6 flex justify-between items-center">
-            <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border backdrop-blur-md shadow-sm ${CATEGORY_COLORS[event.category] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-              {event.category}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-8 flex flex-col flex-grow">
-          <div className="flex items-center gap-3 mb-4 text-slate-400">
-            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-xl border border-slate-100">
-              <CalendarDays className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-xs font-black uppercase tracking-tighter">{formattedDate}</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-slate-200" />
-            <span className="text-[10px] font-black uppercase tracking-widest">{event.event_time?.slice(0, 5) || 'TODO EL DÍA'}</span>
-          </div>
-
-          <h3 className="text-2xl font-black mb-4 leading-[1.1] group-hover:text-blue-600 transition-colors uppercase tracking-tighter italic">{event.title}</h3>
-
-          <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location + ', Ocaña, Norte de Santander')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-2 mb-6 text-slate-500 hover:text-blue-600 transition-colors w-fit group/loc"
-          >
-            <MapPin className="w-4 h-4 text-blue-500/50 shrink-0 group-hover/loc:text-blue-600 transition-colors" />
-            <span className="text-sm font-bold line-clamp-1 tracking-tight underline-offset-4 group-hover/loc:underline">{event.location}</span>
-          </a>
-
-          <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
-                    <img src={Asset.getImageUrl(null, 'avatar')} className="w-full h-full object-cover grayscale-[0.3]" />
-                  </div>
-                ))}
+            <div className="absolute top-6 left-6 flex flex-col gap-2">
+              <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1.5 border border-white/20">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                Verificado
               </div>
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                {attendanceCount > 0 ? `+${attendanceCount} interesados` : 'Sé el primero'}
-              </span>
             </div>
 
-            <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest group/btn py-2 rounded-xl transition-all">
-              <span className="group-hover/btn:mr-2 transition-all">Ver Más</span>
-              <ArrowRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
+            <div className="absolute top-6 right-6 flex gap-2">
+              <button
+                onClick={onShare}
+                className="p-3 rounded-2xl backdrop-blur-md bg-white/80 text-slate-400 hover:text-blue-600 hover:bg-white shadow-lg transition-all duration-300"
+                title="Compartir"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={onToggleSave}
+                disabled={isPending}
+                className={`p-3 rounded-2xl backdrop-blur-md shadow-lg transition-all duration-300 ${saved
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white/80 text-slate-400 hover:text-blue-600 hover:bg-white'
+                  } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {saved ? <Check className="w-4 h-4 stroke-[3px]" /> : <Heart className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="absolute bottom-4 left-6 right-6 flex justify-between items-center">
+              <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border backdrop-blur-md shadow-sm ${CATEGORY_COLORS[event.category] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                {event.category}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8 flex flex-col flex-grow">
+            <div className="flex items-center gap-3 mb-4 text-slate-400">
+              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-xl border border-slate-100">
+                <CalendarDays className="w-3.5 h-3.5 text-blue-500" />
+                <span className="text-xs font-black uppercase tracking-tighter">{formattedDate}</span>
+              </div>
+              <div className="w-1 h-1 rounded-full bg-slate-200" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{event.event_time?.slice(0, 5) || 'TODO EL DÍA'}</span>
+            </div>
+
+            <h3 className="text-2xl font-black mb-4 leading-[1.1] group-hover:text-blue-600 transition-colors uppercase tracking-tighter italic">{event.title}</h3>
+
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.location + ', Ocaña, Norte de Santander')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 mb-6 text-slate-500 hover:text-blue-600 transition-colors w-fit group/loc"
+            >
+              <MapPin className="w-4 h-4 text-blue-500/50 shrink-0 group-hover/loc:text-blue-600 transition-colors" />
+              <span className="text-sm font-bold line-clamp-1 tracking-tight underline-offset-4 group-hover/loc:underline">{event.location}</span>
+            </a>
+
+            <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
+                      <img src={Asset.getImageUrl(null, 'avatar')} className="w-full h-full object-cover grayscale-[0.3]" />
+                    </div>
+                  ))}
+                </div>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  {attendanceCount > 0 ? `+${attendanceCount} interesados` : 'Sé el primero'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest group/btn py-2 rounded-xl transition-all">
+                <span className="group-hover/btn:mr-2 transition-all">Ver Más</span>
+                <ArrowRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Details Modal */}
       {showDetails && (
@@ -194,11 +203,37 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                 fallbackSrc={Asset.getPlaceholder('event')}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+              {(rankingPosition || event.rankingPosition) && (
+                <div className={`absolute top-6 left-6 w-14 h-14 md:w-16 md:h-16 flex flex-col items-center justify-center rounded-2xl shadow-2xl border-4 transform -rotate-6 z-20 ${(rankingPosition || event.rankingPosition) === 1 ? 'bg-yellow-400 text-yellow-900 border-yellow-200' :
+                  (rankingPosition || event.rankingPosition) === 2 ? 'bg-slate-200 text-slate-800 border-white' :
+                    (rankingPosition || event.rankingPosition) === 3 ? 'bg-amber-600 text-amber-50 border-amber-400' :
+                      'bg-white text-slate-800 border-slate-100'
+                  }`}>
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mt-1">Top</span>
+                  <span className="text-2xl md:text-3xl font-black leading-none pb-1">#{rankingPosition || event.rankingPosition}</span>
+                </div>
+              )}
+
               <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-10 md:right-10">
                 <div className={`w-fit px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border mb-4 md:mb-6 backdrop-blur-md shadow-2xl ${CATEGORY_COLORS[event.category]}`}>
                   {event.category}
                 </div>
-                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-[0.85] uppercase italic">{event.title}</h2>
+                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-[0.85] uppercase italic mb-4">{event.title}</h2>
+
+                {((event.averageRating !== undefined && event.totalRatings !== undefined) || (ratingData && ratingData.totalRatings > 0)) && (
+                  <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md w-fit px-4 py-2 rounded-2xl border border-white/10">
+                    <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-md" />
+                    <div>
+                      <div className="text-white font-black text-sm leading-none mb-0.5">
+                        {Number(event.averageRating || ratingData?.averageRating || 0).toFixed(1)}
+                      </div>
+                      <div className="text-[9px] text-white/70 uppercase tracking-widest font-bold leading-none">
+                        {event.totalRatings || ratingData?.totalRatings} reseña{Number(event.totalRatings || ratingData?.totalRatings) !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -254,9 +289,35 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                     {event.description || "Descubre una experiencia única en el corazón de Ocaña. No te pierdas este evento especial diseñado para ti."}
                   </p>
                 </div>
+
+                {(event.tiktok_url || event.instagram_url || event.whatsapp_url) && (
+                  <div>
+                    <h4 className="text-[10px] uppercase font-black text-rose-600 tracking-[0.3em] mb-3 md:mb-4 flex items-center gap-2">
+                      <Share2 className="w-4 h-4" />
+                      Redes del Organizador
+                    </h4>
+                    <div className="flex flex-wrap gap-3">
+                      {event.tiktok_url && (
+                        <a href={event.tiktok_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors flex items-center gap-2">
+                          <TikTokIcon className="w-4 h-4" /> TikTok
+                        </a>
+                      )}
+                      {event.instagram_url && (
+                        <a href={event.instagram_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-xs transition-colors flex items-center gap-2">
+                          <Instagram className="w-4 h-4" /> Instagram
+                        </a>
+                      )}
+                      {event.whatsapp_url && (
+                        <a href={event.whatsapp_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-green-100 hover:bg-green-200 text-green-700 font-bold text-xs transition-colors flex items-center gap-2">
+                          <WhatsAppIcon className="w-4 h-4" /> WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {isAttending && (
+              {!isRankingView && isAttending && !isPastEvent && (
                 <div className="mt-6 md:mt-8 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex flex-col items-center justify-center text-center">
                   <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-3">¿Cómo calificarías este evento?</p>
                   <div className="flex gap-2">
@@ -265,17 +326,14 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                         key={star}
                         onClick={() => handleRating(star)}
                         className={`p-2 transition-all ${(ratingData?.userRating || 0) >= star
-                            ? 'text-yellow-400 hover:text-yellow-500 hover:scale-110 drop-shadow-md'
-                            : 'text-slate-300 hover:text-yellow-400 hover:scale-110'
+                          ? 'text-yellow-400 hover:text-yellow-500 hover:scale-110 drop-shadow-md'
+                          : 'text-slate-300 hover:text-yellow-400 hover:scale-110'
                           }`}
                       >
                         <Star className={`w-8 h-8 ${(ratingData?.userRating || 0) >= star ? 'fill-yellow-400' : ''}`} />
                       </button>
                     ))}
                   </div>
-                  {ratingData && ratingData.totalRatings > 0 && (
-                    <p className="text-xs font-bold text-slate-400 mt-3">Promedio: {ratingData.averageRating.toFixed(1)} de {ratingData.totalRatings} reseñas</p>
-                  )}
                 </div>
               )}
 
@@ -294,27 +352,27 @@ export default function EventCard({ event, initialOpen = false }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  <button
-                    onClick={handleToggleAttendance}
-                    disabled={attendanceLoading || toggleAttendanceMutation.isPending || !user}
-                    className={`w-full py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${
-                      isAttending 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200 shadow-green-200/50' 
+                  {!isRankingView && (
+                    <button
+                      onClick={handleToggleAttendance}
+                      disabled={attendanceLoading || toggleAttendanceMutation.isPending || !user || isPastEvent}
+                      className={`w-full py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl flex items-center justify-center gap-2 md:gap-3 ${isAttending
+                        ? 'bg-green-100 text-green-700 shadow-green-200/50 hover:bg-green-200'
                         : 'bg-slate-900 border-2 border-slate-900 text-white hover:bg-slate-800'
-                    } ${(!user || attendanceLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3px]" />
-                    {isAttending ? 'Asistencia Confirmada' : 'Confirmar Asistencia'}
-                  </button>
+                        } ${(!user || attendanceLoading || isPastEvent) ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
+                    >
+                      <Check className="w-4 h-4 md:w-5 md:h-5 stroke-[3px]" />
+                      {isPastEvent ? (isAttending ? 'Asististe al evento' : 'Evento Finalizado') : (isAttending ? 'Asistencia Confirmada' : 'Confirmar Asistencia')}
+                    </button>
+                  )}
                   <div className="flex gap-4 md:gap-6">
                     <button
                       onClick={onToggleSave}
                       disabled={isPending}
-                      className={`flex-grow py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${
-                        saved 
-                          ? 'bg-slate-100 text-slate-900 hover:bg-slate-200' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
-                      } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`flex-grow py-4 md:py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-2 md:gap-3 ${saved
+                        ? 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
+                        } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {saved ? (
                         <>

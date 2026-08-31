@@ -8,6 +8,9 @@ export type AliadoFormData = {
   sub_category?: string;
   email: string;
   password?: string;
+  tiktok_url?: string;
+  instagram_url?: string;
+  whatsapp_url?: string;
 };
 
 /**
@@ -23,7 +26,10 @@ export async function createAliadoWithAuth(data: AliadoFormData): Promise<Aliado
       description: data.description,
       category: data.category,
       sub_category: data.sub_category,
-      owner_email: data.email
+      owner_email: data.email,
+      tiktok_url: data.tiktok_url,
+      instagram_url: data.instagram_url,
+      whatsapp_url: data.whatsapp_url
     })
     .select()
     .single();
@@ -47,7 +53,8 @@ export async function createAliadoWithAuth(data: AliadoFormData): Promise<Aliado
       options: {
         data: {
           aliado_id: aliado.id,
-          role: 'aliado'
+          role: 'aliado',
+          needs_password_change: true
         }
       }
     });
@@ -60,7 +67,7 @@ export async function createAliadoWithAuth(data: AliadoFormData): Promise<Aliado
         .from('aliados')
         .update({ user_id: authData.user.id })
         .eq('id', aliado.id);
-        
+
       if (updateErr) throw updateErr;
     }
   }
@@ -80,6 +87,9 @@ export async function updateAliadoProfile(id: string, data: Partial<AliadoFormDa
       category: data.category,
       sub_category: data.sub_category,
       owner_email: data.email,
+      tiktok_url: data.tiktok_url,
+      instagram_url: data.instagram_url,
+      whatsapp_url: data.whatsapp_url
     })
     .eq('id', id);
 

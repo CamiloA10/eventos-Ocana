@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  fetchEvents, 
-  type Event, 
-  type EventFilters 
+import {
+  fetchEvents,
+  type Event,
+  type EventFilters
 } from '@/lib/events';
 
 /**
@@ -28,12 +28,12 @@ export function useEventDirectory(filters: EventFilters & { userId?: string, sho
           .from('saved_events')
           .select('event_id')
           .eq('user_id', userId);
-        
+
         if (error) throw error;
         const savedIds = saved.map(s => s.event_id);
         events = events.filter(e => savedIds.includes(e.id));
       }
-      
+
       return events;
     },
     staleTime: 1000 * 60 * 5,
@@ -46,13 +46,16 @@ export function useFeaturedEvents() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*, attendance_count:saved_events(count)')
+        .select('*, saved_events(count)')
         .eq('featured', true)
         .order('event_date', { ascending: true })
         .limit(3);
-        
+
       if (error) throw error;
-      return data || [];
+      return (data || []).map((event: any) => ({
+        ...event,
+        attendance_count: event.saved_events || event.attendance_count
+      }));
     },
   });
 }

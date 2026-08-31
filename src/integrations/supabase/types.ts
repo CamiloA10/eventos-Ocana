@@ -62,6 +62,10 @@ export type Database = {
           location: string
           title: string
           updated_at: string
+          sub_category: string | null
+          tiktok_url: string | null
+          instagram_url: string | null
+          whatsapp_url: string | null
         }
         Insert: {
           category: string
@@ -77,6 +81,10 @@ export type Database = {
           location: string
           title: string
           updated_at?: string
+          sub_category?: string | null
+          tiktok_url?: string | null
+          instagram_url?: string | null
+          whatsapp_url?: string | null
         }
         Update: {
           category?: string
@@ -92,6 +100,10 @@ export type Database = {
           location?: string
           title?: string
           updated_at?: string
+          sub_category?: string | null
+          tiktok_url?: string | null
+          instagram_url?: string | null
+          whatsapp_url?: string | null
         }
         Relationships: [
           {
